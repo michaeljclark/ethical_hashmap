@@ -179,21 +179,21 @@ int main(int argc, char **argv)
 	bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,255);
 	bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,1023);
 	bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,16383);
-	bench_stdmap(1<<20);
+	bench_stdmap(1000000);
 	bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,255);
 	bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,1023);
 	bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,16383);
-	bench_unmap(1<<20);
+	bench_unmap(1000000);
 	bench_generic<hashmap<size_t,size_t,hash_fnv>>("hashmap<FNV1amc>::operator[]",10000000,255);
 	bench_generic<hashmap<size_t,size_t,hash_fnv>>("hashmap<FNV1amc>::operator[]",10000000,1023);
 	bench_generic<hashmap<size_t,size_t,hash_fnv>>("hashmap<FNV1amc>::operator[]",10000000,16383);
-	bench_hashmap_fnv(1<<20);
+	bench_hashmap_fnv(1000000);
 	bench_generic<hashmap<size_t,size_t,hash_ident>>("hashmap<ident>::operator[]",10000000,255);
 	bench_generic<hashmap<size_t,size_t,hash_ident>>("hashmap<ident>::operator[]",10000000,1023);
 	bench_generic<hashmap<size_t,size_t,hash_ident>>("hashmap<ident>::operator[]",10000000,16383);
-	bench_hashmap_nop(1<<20);
+	bench_hashmap_nop(1000000);
 	bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,255);
 	bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,1023);
 	bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,16383);
-	bench_google_dense_hash_map(1<<20);
+	bench_google_dense_hash_map(1000000);
 }
