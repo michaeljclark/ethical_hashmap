@@ -1,5 +1,5 @@
 /*
- * hashmap - fast map using FNV hash function
+ * hashmap - fast open addressing hash table with FNV hash function
  *
  * Copyright (c) 2020 Michael Clark <michaeljclark@mac.com>
  *
@@ -25,6 +25,13 @@
 #include <cassert>
 
 #include <tuple>
+
+/*
+ * FNV-1a hash algorithm
+ *
+ * The 64-bit word hash uses a rotate of the word so that
+ * entropy in the key is permuted through all bit positions.
+ */
 
 struct hash_fnv
 {
@@ -59,10 +66,29 @@ struct hash_fnv
     }
 };
 
+
+/*
+ * Identity hash function
+ *
+ * The low complexity identity hash function works very well with
+ * open-addressing hash tables, effectively making the table operate
+ * like an array when keys are less than the table size.
+ */
+
 struct hash_ident
 {
     uint64_t operator()(uint64_t r) const { return r; }
 };
+
+
+/*
+ * hashmap - Fast open addressing hash map with tombstone bit map.
+
+ * This open addressing hashmap uses a 2-bit per slot tombstone map
+ * eliminating any requirement for empty and deleted key sentinels.
+ * The hashmap has a simple array of key and value pairs and the
+ * tombstone bitmap, which are allocated in a single call to malloc.
+ */
 
 template <typename K, typename V, typename _Hash = hash_fnv>
 struct hashmap

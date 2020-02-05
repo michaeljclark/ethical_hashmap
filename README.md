@@ -1,6 +1,6 @@
 # hashmap
 
-Fast C++ open addressing hash map.
+Fast open addressing hash table with FNV hash function in C++.
 
 ## Overview
 
