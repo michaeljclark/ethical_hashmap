@@ -175,12 +175,12 @@ void heading()
 
 int main(int argc, char **argv)
 {
-    if (argc == 2 && strcmp(argv[1], "hash_fnv") == 0) {
-        bench_hashmap_fnv(10000000);
+    if (argc >= 2 && strcmp(argv[1], "hash_fnv") == 0) {
+        bench_hashmap_fnv(argc == 3 ? atoi(argv[2]) : 1000000);
         return 0;
     }
-    else if (argc == 2 && strcmp(argv[1], "hash_ident") == 0) {
-        bench_hashmap_nop(10000000);
+    else if (argc >= 2 && strcmp(argv[1], "hash_ident") == 0) {
+        bench_hashmap_nop(argc == 3 ? atoi(argv[2]) : 1000000);
         return 0;
     }
     heading();
