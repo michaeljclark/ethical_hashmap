@@ -4,6 +4,7 @@
 #include <chrono>
 #include <random>
 #include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "dense_hash_map"
@@ -128,6 +129,24 @@ void bench_stdmap(size_t count)
 	print_timings("std::map", t1, t2, t3, count);
 }
 
+void bench_unmap(size_t count)
+{
+	std::unordered_map<uintptr_t,uintptr_t> hm;
+
+	auto data = get_random(count);
+	auto t1 = system_clock::now();
+	for (auto &ent : data) {
+		hm.insert(hm.end(), std::pair<uintptr_t,uintptr_t>(ent.first, ent.second));
+	}
+	auto t2 = system_clock::now();
+	for (auto &ent : data) {
+		assert(hm[ent.first] == ent.second);
+	}
+	auto t3 = system_clock::now();
+
+	print_timings("std::unordered_map", t1, t2, t3, count);
+}
+
 void bench_google_dense_hash_map(size_t count)
 {
 	google::dense_hash_map<uintptr_t,uintptr_t> hm;
@@ -161,6 +180,10 @@ int main(int argc, char **argv)
 	bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,1023);
 	bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,16383);
 	bench_stdmap(1<<20);
+	bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,255);
+	bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,1023);
+	bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,16383);
+	bench_unmap(1<<20);
 	bench_generic<hashmap<size_t,size_t,hash_fnv>>("hashmap<FNV1amc>::operator[]",10000000,255);
 	bench_generic<hashmap<size_t,size_t,hash_fnv>>("hashmap<FNV1amc>::operator[]",10000000,1023);
 	bench_generic<hashmap<size_t,size_t,hash_fnv>>("hashmap<FNV1amc>::operator[]",10000000,16383);
