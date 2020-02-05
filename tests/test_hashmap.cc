@@ -30,6 +30,13 @@ void test_hashmap_simple()
     for (const number_pair_t *n = numbers; n->key != 0; n++) {
         assert(ht.lookup(n->key) == n->val);
     }
+    for (auto ent : ht) {
+        for (const number_pair_t *n = numbers; n->key != 0; n++) {
+            if (ent->key == n->key) {
+                assert(ent->val == n->val);
+            }
+        }
+    }
 }
 
 template <typename F>

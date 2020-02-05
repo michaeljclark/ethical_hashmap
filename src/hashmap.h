@@ -24,6 +24,8 @@
 #include <cstddef>
 #include <cassert>
 
+#include <tuple>
+
 struct hash_fnv
 {
     static const uint64_t fnv_base = 0xcbf29ce484222325;
@@ -100,6 +102,34 @@ struct hashmap
     static inline void tomb_clear(uint64_t *tombs, size_t idx, uint64_t value) {
         tombs[tomb_idx(idx)] &= ~(value << tomb_shift(idx));
     }
+
+    struct iterator {
+        hashmap *h;
+        size_t idx;
+
+        bool operator==(const iterator &o) const {
+            return std::tie(h, idx) == std::tie(o.h, o.idx);
+        }
+        bool operator!=(const iterator &o) const {
+            return std::tie(h, idx) != std::tie(o.h, o.idx);
+        }
+        void shimmy() {
+            while (idx < h->limit &&
+                (tomb_get(h->tombs, idx) & occupied) != occupied) idx++;
+        }
+        iterator operator++() {
+            idx++;
+            shimmy();
+            return *this;
+        }
+        entry* operator*() {
+            shimmy();
+            return &h->data[idx];
+        }
+    };
+
+    iterator begin() { return iterator{ this, 0 }; }
+    iterator end() { return iterator{ this, limit }; }
 
     inline hashmap() : hashmap(default_size) {}
 
