@@ -124,7 +124,8 @@ struct hashmap
 
     static inline bool is_pow2(intptr_t n) { return  ((n & -n) == n); }
 
-    void resize(entry *old_data, uint64_t *old_tombs, size_t old_size, size_t new_size)
+    void resize(entry *old_data, uint64_t *old_tombs,
+                size_t old_size, size_t new_size)
     {
         size_t data_size = sizeof(entry) * new_size;
         size_t tomb_size = new_size >> 2;
