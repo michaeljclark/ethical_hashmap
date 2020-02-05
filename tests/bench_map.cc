@@ -175,6 +175,14 @@ void heading()
 
 int main(int argc, char **argv)
 {
+	if (argc == 2 && strcmp(argv[1], "hash_fnv") == 0) {
+		bench_hashmap_fnv(10000000);
+		return 0;
+	}
+	else if (argc == 2 && strcmp(argv[1], "hash_ident") == 0) {
+		bench_hashmap_nop(10000000);
+		return 0;
+	}
 	heading();
 	bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,255);
 	bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,1023);
