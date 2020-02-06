@@ -107,8 +107,8 @@ struct hashmap
     typedef Key key_type;
     typedef Value mapped_type;
     typedef std::pair<Key, Value> value_type;
-    typedef _Pred key_equal;
     typedef _Hash hasher;
+    typedef _Pred key_equal;
     typedef value_type& reference;
     typedef const value_type& const_reference;
 
