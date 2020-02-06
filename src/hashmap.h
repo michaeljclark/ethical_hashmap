@@ -217,9 +217,7 @@ struct hashmap
     {
         size_t i = key_index(value.first);
         for (;;) {
-            tomb_state t = tomb_get(tombs, i);
-            if (t == available || t == deleted) {
-                /* available */
+            if ((tomb_get(tombs, i) & occupied) != occupied) {
                 tomb_set(tombs, i, occupied);
                 data[i] = value;
                 count++;
@@ -227,7 +225,7 @@ struct hashmap
                     resize(data, tombs, limit, limit << 1);
                 }
                 return;
-            } else if (data[i].first == value.first) {  /* found */
+            } else if (data[i].first == value.first) {
                 data[i].second = value.second;
                 return;
             }
@@ -239,9 +237,7 @@ struct hashmap
     {
         size_t i = key_index(key);
         for (;;) {
-            tomb_state t = tomb_get(tombs, i);
-            if (t == available || t == deleted) {
-                /* available */
+            if ((tomb_get(tombs, i) & occupied) != occupied) {
                 tomb_set(tombs, i, occupied);
                 data[i].first = key;
                 count++;
@@ -250,7 +246,7 @@ struct hashmap
                     i = key_index(key);
                 }
                 return data[i].second;
-            } else if (data[i].first == key) {  /* found */
+            } else if (data[i].first == key) {
                 return data[i].second;
             }
             i = (i + 1) & index_mask();
@@ -264,7 +260,7 @@ struct hashmap
             tomb_state t = tomb_get(tombs, i);
                  if (t == available)       /* notfound */ break;
             else if (t == deleted);        /* skip */
-            else if (data[i].first == key) /* found */ return iterator{this, i};
+            else if (data[i].first == key) return iterator{this, i};
             i = (i + 1) & index_mask();
         }
         return end();
@@ -275,10 +271,9 @@ struct hashmap
         size_t i = key_index(key);
         for (;;) {
             tomb_state t = tomb_get(tombs, i);
-                 if (t == available)           /* notfound */ break;
-            else if (t == deleted);            /* skip */
-            else if (data[i].first == key) {   /* found */
-                /* { recycled, occupied } -> deleted */
+                 if (t == available)       /* notfound */ break;
+            else if (t == deleted);        /* skip */
+            else if (data[i].first == key) {
                 tomb_set(tombs, i, deleted);
                 tomb_clear(tombs, i, occupied);
                 data[i].second = Value(0);
