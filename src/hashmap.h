@@ -97,7 +97,7 @@ template <class Key, class Value,
 struct hashmap
 {
     /* parameters  */
-    static const size_t default_size =    (2<<10); /* 1024 */
+    static const size_t default_size =    (2<<7);  /* 128 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
     static const size_t load_multiplier = (2<<16);
 
