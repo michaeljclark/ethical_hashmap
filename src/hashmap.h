@@ -96,10 +96,12 @@ template <class Key, class Value,
           class _Pred = std::equal_to<Key>>
 struct hashmap
 {
+    /* parameters */
     static const size_t default_size =    (2<<10); /* 1024 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
     static const size_t load_multiplier = (2<<16);
 
+    /* member types */
     typedef Key key_type;
     typedef Value mapped_type;
     typedef std::pair<Key, Value> value_type;
@@ -111,31 +113,18 @@ struct hashmap
     hasher _hasher;
     key_equal _compare;
 
+    /* member types */
     size_t count;
     size_t limit;
     value_type *data;
     uint64_t *tombs;
 
+    /* tombstone bitmap states */
     enum tomb_state {
-        available = 0,
-        occupied = 1,
-        deleted = 2,
-        recycled = 3
+        available = 0, occupied = 1, deleted = 2, recycled = 3
     };
 
-    static inline size_t tomb_idx(size_t i) { return i >> 5; }
-    static inline size_t tomb_shift(size_t i) { return ((i << 1) & 63); }
-
-    static inline tomb_state tomb_get(uint64_t *tombs, size_t i) {
-        return (tomb_state)((tombs[tomb_idx(i)] >> tomb_shift(i)) & 3);
-    }
-    static inline void tomb_set(uint64_t *tombs, size_t i, uint64_t value) {
-        tombs[tomb_idx(i)] |= (value << tomb_shift(i));
-    }
-    static inline void tomb_clear(uint64_t *tombs, size_t i, uint64_t value) {
-        tombs[tomb_idx(i)] &= ~(value << tomb_shift(i));
-    }
-
+    /* iterator */
     struct iterator {
         hashmap *h;
         size_t i;
@@ -164,24 +153,25 @@ struct hashmap
             return &h->data[i];
         }
     };
-
     iterator begin() { return iterator{ this, 0 }; }
     iterator end() { return iterator{ this, limit }; }
 
-    inline hashmap() : hashmap(default_size) {}
+    /* utility functions */
+    static inline bool is_pow2(intptr_t n) { return  ((n & -n) == n); }
 
+    /* constructors, destructor and simple member functions */
+    inline hashmap() : hashmap(default_size) {}
     inline hashmap(size_t initial_size) : count(0), limit(initial_size)
     {
         size_t data_size = sizeof(value_type) * initial_size;
         size_t tomb_size = initial_size >> 2;
         size_t total_size = data_size + tomb_size;
+
         data = (value_type*)malloc(total_size);
         tombs = (uint64_t*)((char*)data + data_size);
         memset(data, 0, total_size);
     }
-
     inline ~hashmap() { free(data); }
-
     inline size_t size() { return count; }
     inline size_t capacity() { return limit; }
     inline size_t load() { return count * load_multiplier / limit; }
@@ -189,7 +179,25 @@ struct hashmap
     inline size_t hash_index(uint64_t h) { return h & index_mask(); }
     inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
 
-    static inline bool is_pow2(intptr_t n) { return  ((n & -n) == n); }
+    /* tombstone bitmap manipulation */
+    static inline size_t tomb_idx(size_t i) { return i >> 5; }
+    static inline size_t tomb_shift(size_t i) { return ((i << 1) & 63); }
+    static inline tomb_state tomb_get(uint64_t *tombs, size_t i)
+    {
+        return (tomb_state)((tombs[tomb_idx(i)] >> tomb_shift(i)) & 3);
+    }
+    static inline void tomb_set(uint64_t *tombs, size_t i, uint64_t value)
+    {
+        tombs[tomb_idx(i)] |= (value << tomb_shift(i));
+    }
+    static inline void tomb_clear(uint64_t *tombs, size_t i, uint64_t value)
+    {
+        tombs[tomb_idx(i)] &= ~(value << tomb_shift(i));
+    }
+
+    /*
+     * hashtable implementation
+     */
 
     void resize(value_type *old_data, uint64_t *old_tombs,
                 size_t old_size, size_t new_size)
