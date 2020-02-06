@@ -39,17 +39,6 @@ struct hash_fnv
     static const uint64_t fnv_base = 0xcbf29ce484222325;
     static const uint64_t fnv_prime = 0x100000001b3;
 
-    /* FNV-1a hash function */
-    uint64_t operator()(const char *s) const
-    {
-        uint64_t h = fnv_base;
-        while (*s) {
-            h = h ^ *s++;
-            h = h * fnv_prime;
-        }
-        return h;
-    }
-
     static inline uint64_t ror(uint64_t n, size_t s) {
         return ((n >> s) | (n << (64-s)));
     }
@@ -61,6 +50,17 @@ struct hash_fnv
         for (size_t i = 0; i < 64; i += 8) {
             /* xor rotated 64-bit word (8x8 permute) */
             h = h ^ ror(r, i);
+            h = h * fnv_prime;
+        }
+        return h;
+    }
+
+    /* FNV-1a hash function */
+    uint64_t operator()(const char *s) const
+    {
+        uint64_t h = fnv_base;
+        while (*s) {
+            h = h ^ *s++;
             h = h * fnv_prime;
         }
         return h;
