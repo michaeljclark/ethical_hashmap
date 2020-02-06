@@ -91,11 +91,11 @@ struct hash_ident
  * tombstone bitmap, which are allocated in a single call to malloc.
  */
 
-template <typename Key, typename Value, typename _Hash = hash_fnv>
+template <class Key, class Value,
+          class _Hash = hash_fnv,
+          class _Pred = std::equal_to<Key>>
 struct hashmap
 {
-    static const _Hash hasher;
-
     static const size_t default_size =    (2<<10); /* 1024 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
     static const size_t load_multiplier = (2<<16);
@@ -103,6 +103,13 @@ struct hashmap
     typedef Key key_type;
     typedef Value mapped_type;
     typedef std::pair<Key, Value> value_type;
+    typedef _Pred key_equal;
+    typedef _Hash hasher;
+    typedef value_type& reference;
+    typedef const value_type& const_reference;
+
+    hasher _hasher;
+    key_equal _compare;
 
     size_t count;
     size_t limit;
@@ -180,7 +187,7 @@ struct hashmap
     inline size_t load() { return count * load_multiplier / limit; }
     inline size_t index_mask() { return limit - 1; }
     inline size_t hash_index(uint64_t h) { return h & index_mask(); }
-    inline size_t key_index(Key key) { return hash_index(hasher(key)); }
+    inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
 
     static inline bool is_pow2(intptr_t n) { return  ((n & -n) == n); }
 
@@ -225,7 +232,7 @@ struct hashmap
                     resize(data, tombs, limit, limit << 1);
                 }
                 return;
-            } else if (data[i].first == value.first) {
+            } else if (_compare(data[i].first, value.first)) {
                 data[i].second = value.second;
                 return;
             }
@@ -246,7 +253,7 @@ struct hashmap
                     i = key_index(key);
                 }
                 return data[i].second;
-            } else if (data[i].first == key) {
+            } else if (_compare(data[i].first, key)) {
                 return data[i].second;
             }
             i = (i + 1) & index_mask();
@@ -260,7 +267,7 @@ struct hashmap
             tomb_state t = tomb_get(tombs, i);
                  if (t == available)       /* notfound */ break;
             else if (t == deleted);        /* skip */
-            else if (data[i].first == key) return iterator{this, i};
+            else if (_compare(data[i].first, key)) return iterator{this, i};
             i = (i + 1) & index_mask();
         }
         return end();
@@ -273,7 +280,7 @@ struct hashmap
             tomb_state t = tomb_get(tombs, i);
                  if (t == available)       /* notfound */ break;
             else if (t == deleted);        /* skip */
-            else if (data[i].first == key) {
+            else if (_compare(data[i].first, key)) {
                 tomb_set(tombs, i, deleted);
                 tomb_clear(tombs, i, occupied);
                 data[i].second = Value(0);
