@@ -251,9 +251,20 @@ struct hashmap
      * @param key to insert
      * @param val to insert
      */
-    void insert(Key key, Value val)
+    iterator insert(iterator i, const value_type& value)
     {
-        insert(value_type(key, val));
+        return insert(value);
+    }
+
+    /**
+     * insert element
+     *
+     * @param key to insert
+     * @param val to insert
+     */
+    iterator insert(Key key, Value val)
+    {
+        return insert(value_type(key, val));
     }
 
     /**
@@ -261,7 +272,7 @@ struct hashmap
      *
      * @param value_type to insert
      */
-    void insert(const value_type& value)
+    iterator insert(const value_type& value)
     {
         size_t i = key_index(value.first);
         for (;;) {
@@ -271,11 +282,12 @@ struct hashmap
                 count++;
                 if (load() > load_factor) {
                     resize_internal(data, tombs, limit, limit << 1);
+                    i = 0; /* lost iterator position */
                 }
-                return;
+                return iterator{this, i};
             } else if (_compare(data[i].first, value.first)) {
                 data[i].second = value.second;
-                return;
+                return iterator{this, i};
             }
             i = (i + 1) & index_mask();
         }
