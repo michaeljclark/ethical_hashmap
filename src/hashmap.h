@@ -127,36 +127,18 @@ struct hashmap
         hashmap *h;
         size_t i;
 
-        bool operator==(const iterator &o) const {
-            return h == o.h && i == o.i;
-        }
-        bool operator!=(const iterator &o) const {
-            return h != o.h || i != o.i;
-        }
-        size_t shimmy(size_t i) {
+        size_t step(size_t i) {
             while (i < h->limit &&
-                (bitmap_get(h->bitmap, i) & occupied) != occupied) i++;
+                   (bitmap_get(h->bitmap, i) & occupied) != occupied) i++;
             return i;
         }
-        iterator& operator++() {
-            i = shimmy(i + 1);
-            return *this;
-        }
-        iterator& operator++(int) {
-            i = shimmy(i) + 1;
-            return *this;
-        }
-        value_type& operator*() {
-            i = shimmy(i);
-            return h->data[i];
-        }
-        value_type* operator->() {
-            i = shimmy(i);
-            return &h->data[i];
-        }
+        iterator& operator++() { i = step(i + 1); return *this; }
+        iterator& operator++(int) { i = step(i) + 1; return *this; }
+        value_type& operator*() { i = step(i); return h->data[i]; }
+        value_type* operator->() { i = step(i); return &h->data[i]; }
+        bool operator==(const iterator &o) const { return h == o.h && i == o.i; }
+        bool operator!=(const iterator &o) const { return h != o.h || i != o.i; }
     };
-    iterator begin() { return iterator{ this, 0 }; }
-    iterator end() { return iterator{ this, limit }; }
 
     /* utility functions */
     static inline bool is_pow2(intptr_t n) { return  ((n & -n) == n); }
@@ -189,6 +171,8 @@ struct hashmap
     inline size_t hash_index(uint64_t h) { return h & index_mask(); }
     inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
     inline hasher hash_function() const { return _hasher; }
+    iterator begin() { return iterator{ this, 0 }; }
+    iterator end() { return iterator{ this, limit }; }
 
     /*
      * bitmap management
