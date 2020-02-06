@@ -25,6 +25,7 @@
 #include <cassert>
 
 #include <tuple>
+#include <utility>
 
 /*
  * FNV-1a hash algorithm
