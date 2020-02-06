@@ -159,7 +159,10 @@ struct hashmap
     /* utility functions */
     static inline bool is_pow2(intptr_t n) { return  ((n & -n) == n); }
 
-    /* constructors, destructor and simple member functions */
+    /*
+     * constructors, destructor and simple member functions
+     */
+
     inline hashmap() : hashmap(default_size) {}
     inline hashmap(size_t initial_size) : count(0), limit(initial_size)
     {
@@ -167,11 +170,18 @@ struct hashmap
         size_t tomb_size = initial_size >> 2;
         size_t total_size = data_size + tomb_size;
 
+        assert(is_pow2(initial_size));
+
         data = (value_type*)malloc(total_size);
         tombs = (uint64_t*)((char*)data + data_size);
         memset(data, 0, total_size);
     }
     inline ~hashmap() { free(data); }
+
+    /*
+     * simple member functions
+     */
+
     inline size_t size() { return count; }
     inline size_t capacity() { return limit; }
     inline size_t load() { return count * load_multiplier / limit; }
@@ -179,7 +189,10 @@ struct hashmap
     inline size_t hash_index(uint64_t h) { return h & index_mask(); }
     inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
 
-    /* tombstone bitmap manipulation */
+    /*
+     * tombstone bitmap
+     */
+
     static inline size_t tomb_idx(size_t i) { return i >> 5; }
     static inline size_t tomb_shift(size_t i) { return ((i << 1) & 63); }
     static inline tomb_state tomb_get(uint64_t *tombs, size_t i)
