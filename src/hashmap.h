@@ -188,6 +188,7 @@ struct hashmap
     inline size_t index_mask() { return limit - 1; }
     inline size_t hash_index(uint64_t h) { return h & index_mask(); }
     inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
+    inline hasher hash_function() const { return _hasher; }
 
     /*
      * bitmap management
