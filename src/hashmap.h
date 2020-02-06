@@ -139,7 +139,7 @@ struct hashmap
     };
 
     /*
-     * constructors, destructor and simple member functions
+     * constructors and destructor
      */
     inline hashmap() : hashmap(default_size) {}
     inline hashmap(size_t initial_size) : count(0), limit(initial_size)
