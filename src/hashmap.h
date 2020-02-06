@@ -121,7 +121,8 @@ struct hashmap
     /*
      * simple iterator
      */
-    struct iterator {
+    struct iterator
+    {
         hashmap *h;
         size_t i;
 
