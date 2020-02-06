@@ -96,12 +96,12 @@ template <class Key, class Value,
           class _Pred = std::equal_to<Key>>
 struct hashmap
 {
-    /* parameters */
+    /* parameters  */
     static const size_t default_size =    (2<<10); /* 1024 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
     static const size_t load_multiplier = (2<<16);
 
-    /* member types */
+    /* types  */
     typedef Key key_type;
     typedef Value mapped_type;
     typedef std::pair<Key, Value> value_type;
@@ -110,21 +110,19 @@ struct hashmap
     typedef value_type& reference;
     typedef const value_type& const_reference;
 
+    /* functors */
     hasher _hasher;
     key_equal _compare;
 
-    /* member types */
+    /* storage */
     size_t count;
     size_t limit;
     value_type *data;
     uint64_t *tombs;
 
-    /* tombstone bitmap states */
-    enum tomb_state {
-        available = 0, occupied = 1, deleted = 2, recycled = 3
-    };
-
-    /* iterator */
+    /*
+     * simple iterator
+     */
     struct iterator {
         hashmap *h;
         size_t i;
@@ -162,7 +160,6 @@ struct hashmap
     /*
      * constructors, destructor and simple member functions
      */
-
     inline hashmap() : hashmap(default_size) {}
     inline hashmap(size_t initial_size) : count(0), limit(initial_size)
     {
@@ -179,9 +176,8 @@ struct hashmap
     inline ~hashmap() { free(data); }
 
     /*
-     * simple member functions
+     * member functions
      */
-
     inline size_t size() { return count; }
     inline size_t capacity() { return limit; }
     inline size_t load() { return count * load_multiplier / limit; }
@@ -190,9 +186,11 @@ struct hashmap
     inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
 
     /*
-     * tombstone bitmap
+     * tombstone bitmap management
      */
-
+    enum tomb_state {
+        available = 0, occupied = 1, deleted = 2, recycled = 3
+    };
     static inline size_t tomb_idx(size_t i) { return i >> 5; }
     static inline size_t tomb_shift(size_t i) { return ((i << 1) & 63); }
     static inline tomb_state tomb_get(uint64_t *tombs, size_t i)
@@ -209,11 +207,10 @@ struct hashmap
     }
 
     /*
-     * hashtable implementation
+     * resize to expand the hashtable storage
      */
-
-    void resize(value_type *old_data, uint64_t *old_tombs,
-                size_t old_size, size_t new_size)
+    void resize_internal(value_type *old_data, uint64_t *old_tombs,
+                         size_t old_size, size_t new_size)
     {
         size_t data_size = sizeof(value_type) * new_size;
         size_t tomb_size = new_size >> 2;
@@ -236,11 +233,22 @@ struct hashmap
         free(old_data);
     }
 
+    /**
+     * insert element
+     *
+     * @param key to insert
+     * @param val to insert
+     */
     void insert(Key key, Value val)
     {
         insert(value_type(key, val));
     }
 
+    /**
+     * insert element
+     *
+     * @param value_type to insert
+     */
     void insert(const value_type& value)
     {
         size_t i = key_index(value.first);
@@ -250,7 +258,7 @@ struct hashmap
                 data[i] = value;
                 count++;
                 if (load() > load_factor) {
-                    resize(data, tombs, limit, limit << 1);
+                    resize_internal(data, tombs, limit, limit << 1);
                 }
                 return;
             } else if (_compare(data[i].first, value.first)) {
@@ -261,6 +269,12 @@ struct hashmap
         }
     }
 
+    /**
+     * access element
+     *
+     * @param Key to find
+     * @returns iterator to the element or end if not found
+     */
     Value& operator[](const Key &key)
     {
         size_t i = key_index(key);
@@ -270,7 +284,7 @@ struct hashmap
                 data[i].first = key;
                 count++;
                 if (load() > load_factor) {
-                    resize(data, tombs, limit, limit << 1);
+                    resize_internal(data, tombs, limit, limit << 1);
                     i = key_index(key);
                 }
                 return data[i].second;
@@ -281,6 +295,12 @@ struct hashmap
         }
     }
 
+    /**
+     * find iterator to element
+     *
+     * @param Key to find
+     * @returns iterator to the element or to end()
+     */
     iterator find(const Key &key)
     {
         size_t i = key_index(key);
@@ -294,6 +314,11 @@ struct hashmap
         return end();
     }
 
+    /**
+     * erase element
+     *
+     * @param Key to erase
+     */
     void erase(Key key)
     {
         size_t i = key_index(key);
