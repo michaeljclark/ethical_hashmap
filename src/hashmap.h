@@ -99,7 +99,7 @@ struct hashmap
     /* parameters  */
     static const size_t default_size =    (2<<7);  /* 128 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
-    static const size_t load_multiplier = (2<<16);
+    static const size_t load_multiplier = (2<<16); /* 1.0 */
 
     /* types  */
     typedef Key key_type;
