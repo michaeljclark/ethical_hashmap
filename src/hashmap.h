@@ -1,5 +1,5 @@
 /*
- * zhashmap - fast open addressing hash table with FNV hash function
+ * zhashmap - fast open addressing hash table
  *
  * Copyright (c) 2020 Michael Clark <michaeljclark@mac.com>
  *

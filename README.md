@@ -1,6 +1,6 @@
 # zhashmap
 
-Fast open addressing hash table with FNV hash function in C++.
+Fast open addressing hash table in C++.
 
 ## Overview
 
