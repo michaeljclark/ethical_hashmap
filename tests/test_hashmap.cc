@@ -7,15 +7,13 @@
 #include <map>
 #include <random>
 #include <chrono>
+#include <utility>
 
 #include "hashmap.h"
 
 using namespace std::chrono;
 
-struct number_pair_t {
-    uintptr_t key;
-    uintptr_t val;
-};
+typedef std::pair<uintptr_t,uintptr_t> number_pair_t;
 
 static const number_pair_t numbers[] = {
     { 7, 1 }, { 11, 2 }, { 15, 3 }, { 19, 4 }, { 21, 5 }, { 0, 0}
@@ -24,16 +22,16 @@ static const number_pair_t numbers[] = {
 void test_hashmap_simple()
 {
     hashmap<uintptr_t,uintptr_t> ht;
-    for (const number_pair_t *n = numbers; n->key != 0; n++) {
-        ht.insert(n->key, n->val);
+    for (const number_pair_t *n = numbers; n->first != 0; n++) {
+        ht.insert(n->first, n->second);
     }
-    for (const number_pair_t *n = numbers; n->key != 0; n++) {
-        assert(ht.lookup(n->key) == n->val);
+    for (const number_pair_t *n = numbers; n->first != 0; n++) {
+        assert(ht.lookup(n->first) == n->second);
     }
     for (auto ent : ht) {
-        for (const number_pair_t *n = numbers; n->key != 0; n++) {
-            if (ent->key == n->key) {
-                assert(ent->val == n->val);
+        for (const number_pair_t *n = numbers; n->first != 0; n++) {
+            if (ent->first == n->first) {
+                assert(ent->second == n->second);
             }
         }
     }
