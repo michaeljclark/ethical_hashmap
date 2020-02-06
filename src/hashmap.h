@@ -67,7 +67,6 @@ struct hash_fnv
     }
 };
 
-
 /*
  * Identity hash function
  *
@@ -80,7 +79,6 @@ struct hash_ident
 {
     uint64_t operator()(uint64_t r) const { return r; }
 };
-
 
 /*
  * hashmap - Fast open addressing hash map with tombstone bit map.
@@ -193,8 +191,8 @@ struct hashmap
     }
     static inline bool is_pow2(intptr_t n) { return  ((n & -n) == n); }
 
-    /*
-     * resize to expand the hashtable storage
+    /**
+     * resize and rehash the table
      */
     void resize_internal(value_type *old_data, uint64_t *old_bitmap,
                          size_t old_size, size_t new_size)
