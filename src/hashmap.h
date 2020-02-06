@@ -140,9 +140,6 @@ struct hashmap
         bool operator!=(const iterator &o) const { return h != o.h || i != o.i; }
     };
 
-    /* utility functions */
-    static inline bool is_pow2(intptr_t n) { return  ((n & -n) == n); }
-
     /*
      * constructors, destructor and simple member functions
      */
@@ -175,7 +172,7 @@ struct hashmap
     iterator end() { return iterator{ this, limit }; }
 
     /*
-     * bitmap management
+     * bit manipulation
      */
     enum bitmap_state {
         available = 0, occupied = 1, deleted = 2, recycled = 3
@@ -194,6 +191,7 @@ struct hashmap
     {
         bitmap[bitmap_idx(i)] &= ~(value << bitmap_shift(i));
     }
+    static inline bool is_pow2(intptr_t n) { return  ((n & -n) == n); }
 
     /*
      * resize to expand the hashtable storage
