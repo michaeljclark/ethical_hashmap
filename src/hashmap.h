@@ -234,6 +234,18 @@ struct hashmap
     }
 
     /**
+     * clear the table
+     */
+    void clear()
+    {
+        size_t data_size = sizeof(value_type) * limit;
+        size_t tomb_size = limit >> 2;
+        size_t total_size = data_size + tomb_size;
+        memset(data, 0, total_size);
+        count = 0;
+    }
+
+    /**
      * insert element
      *
      * @param key to insert
