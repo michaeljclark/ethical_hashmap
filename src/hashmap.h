@@ -317,9 +317,9 @@ struct hashmap
     {
         size_t i = key_index(key);
         for (;;) {
-            bitmap_state t = bitmap_get(bitmap, i);
-                 if (t == available)       /* notfound */ break;
-            else if (t == deleted);        /* skip */
+            bitmap_state state = bitmap_get(bitmap, i);
+                 if (state == available)           /* notfound */ break;
+            else if (state == deleted);            /* skip */
             else if (_compare(data[i].first, key)) return iterator{this, i};
             i = (i + 1) & index_mask();
         }
@@ -335,9 +335,9 @@ struct hashmap
     {
         size_t i = key_index(key);
         for (;;) {
-            bitmap_state t = bitmap_get(bitmap, i);
-                 if (t == available)       /* notfound */ break;
-            else if (t == deleted);        /* skip */
+            bitmap_state state = bitmap_get(bitmap, i);
+                 if (state == available)           /* notfound */ break;
+            else if (state == deleted);            /* skip */
             else if (_compare(data[i].first, key)) {
                 bitmap_set(bitmap, i, deleted);
                 data[i].second = Value(0);
