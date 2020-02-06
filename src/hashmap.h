@@ -25,6 +25,7 @@
 #include <cassert>
 
 #include <utility>
+#include <functional>
 
 /*
  * FNV-1a hash algorithm
