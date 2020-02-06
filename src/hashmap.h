@@ -85,8 +85,8 @@ struct hash_ident
 /*
  * hashmap - Fast open addressing hash map with tombstone bit map.
 
- * This open addressing hashmap uses a 2-bit per slot tombstone map
- * eliminating any requirement for empty and deleted key sentinels.
+ * This open addressing hashmap uses a 2-bit entry per slot bitmap
+ * that eliminates the need for empty and deleted key sentinels.
  * The hashmap has a simple array of key and value pairs and the
  * tombstone bitmap, which are allocated in a single call to malloc.
  */
@@ -118,7 +118,7 @@ struct hashmap
     size_t count;
     size_t limit;
     value_type *data;
-    uint64_t *tombs;
+    uint64_t *bitmap;
 
     /*
      * simple iterator
@@ -135,7 +135,7 @@ struct hashmap
         }
         size_t shimmy(size_t i) {
             while (i < h->limit &&
-                (tomb_get(h->tombs, i) & occupied) != occupied) i++;
+                (bitmap_get(h->bitmap, i) & occupied) != occupied) i++;
             return i;
         }
         iterator& operator++() {
@@ -168,13 +168,13 @@ struct hashmap
     inline hashmap(size_t initial_size) : count(0), limit(initial_size)
     {
         size_t data_size = sizeof(value_type) * initial_size;
-        size_t tomb_size = initial_size >> 2;
-        size_t total_size = data_size + tomb_size;
+        size_t bitmap_size = initial_size >> 2;
+        size_t total_size = data_size + bitmap_size;
 
         assert(is_pow2(initial_size));
 
         data = (value_type*)malloc(total_size);
-        tombs = (uint64_t*)((char*)data + data_size);
+        bitmap = (uint64_t*)((char*)data + data_size);
         memset(data, 0, total_size);
     }
     inline ~hashmap() { free(data); }
@@ -190,46 +190,46 @@ struct hashmap
     inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
 
     /*
-     * tombstone bitmap management
+     * bitmap management
      */
-    enum tomb_state {
+    enum bitmap_state {
         available = 0, occupied = 1, deleted = 2, recycled = 3
     };
-    static inline size_t tomb_idx(size_t i) { return i >> 5; }
-    static inline size_t tomb_shift(size_t i) { return ((i << 1) & 63); }
-    static inline tomb_state tomb_get(uint64_t *tombs, size_t i)
+    static inline size_t bitmap_idx(size_t i) { return i >> 5; }
+    static inline size_t bitmap_shift(size_t i) { return ((i << 1) & 63); }
+    static inline bitmap_state bitmap_get(uint64_t *bitmap, size_t i)
     {
-        return (tomb_state)((tombs[tomb_idx(i)] >> tomb_shift(i)) & 3);
+        return (bitmap_state)((bitmap[bitmap_idx(i)] >> bitmap_shift(i)) & 3);
     }
-    static inline void tomb_set(uint64_t *tombs, size_t i, uint64_t value)
+    static inline void bitmap_set(uint64_t *bitmap, size_t i, uint64_t value)
     {
-        tombs[tomb_idx(i)] |= (value << tomb_shift(i));
+        bitmap[bitmap_idx(i)] |= (value << bitmap_shift(i));
     }
-    static inline void tomb_clear(uint64_t *tombs, size_t i, uint64_t value)
+    static inline void bitmap_clear(uint64_t *bitmap, size_t i, uint64_t value)
     {
-        tombs[tomb_idx(i)] &= ~(value << tomb_shift(i));
+        bitmap[bitmap_idx(i)] &= ~(value << bitmap_shift(i));
     }
 
     /*
      * resize to expand the hashtable storage
      */
-    void resize_internal(value_type *old_data, uint64_t *old_tombs,
+    void resize_internal(value_type *old_data, uint64_t *old_bitmap,
                          size_t old_size, size_t new_size)
     {
         size_t data_size = sizeof(value_type) * new_size;
-        size_t tomb_size = new_size >> 2;
-        size_t total_size = data_size + tomb_size;
+        size_t bitmap_size = new_size >> 2;
+        size_t total_size = data_size + bitmap_size;
 
         assert(is_pow2(new_size));
 
         data = (value_type*)malloc(total_size);
-        tombs = (uint64_t*)((char*)data + data_size);
+        bitmap = (uint64_t*)((char*)data + data_size);
         limit = new_size;
         memset(data, 0, total_size);
 
         size_t i = 0;
         for (value_type *v = old_data; v != old_data + old_size; v++, i++) {
-            if ((tomb_get(old_tombs, i) & occupied) == occupied) {
+            if ((bitmap_get(old_bitmap, i) & occupied) == occupied) {
                 insert(v->first, v->second);
             }
         }
@@ -243,8 +243,8 @@ struct hashmap
     void clear()
     {
         size_t data_size = sizeof(value_type) * limit;
-        size_t tomb_size = limit >> 2;
-        size_t total_size = data_size + tomb_size;
+        size_t bitmap_size = limit >> 2;
+        size_t total_size = data_size + bitmap_size;
         memset(data, 0, total_size);
         count = 0;
     }
@@ -280,12 +280,12 @@ struct hashmap
     {
         size_t i = key_index(value.first);
         for (;;) {
-            if ((tomb_get(tombs, i) & occupied) != occupied) {
-                tomb_set(tombs, i, occupied);
+            if ((bitmap_get(bitmap, i) & occupied) != occupied) {
+                bitmap_set(bitmap, i, occupied);
                 data[i] = value;
                 count++;
                 if (load() > load_factor) {
-                    resize_internal(data, tombs, limit, limit << 1);
+                    resize_internal(data, bitmap, limit, limit << 1);
                     return find(value.first);
                 } else {
                     return iterator{this, i};
@@ -308,12 +308,12 @@ struct hashmap
     {
         size_t i = key_index(key);
         for (;;) {
-            if ((tomb_get(tombs, i) & occupied) != occupied) {
-                tomb_set(tombs, i, occupied);
+            if ((bitmap_get(bitmap, i) & occupied) != occupied) {
+                bitmap_set(bitmap, i, occupied);
                 data[i].first = key;
                 count++;
                 if (load() > load_factor) {
-                    resize_internal(data, tombs, limit, limit << 1);
+                    resize_internal(data, bitmap, limit, limit << 1);
                     i = key_index(key);
                 }
                 return data[i].second;
@@ -334,7 +334,7 @@ struct hashmap
     {
         size_t i = key_index(key);
         for (;;) {
-            tomb_state t = tomb_get(tombs, i);
+            bitmap_state t = bitmap_get(bitmap, i);
                  if (t == available)       /* notfound */ break;
             else if (t == deleted);        /* skip */
             else if (_compare(data[i].first, key)) return iterator{this, i};
@@ -352,13 +352,13 @@ struct hashmap
     {
         size_t i = key_index(key);
         for (;;) {
-            tomb_state t = tomb_get(tombs, i);
+            bitmap_state t = bitmap_get(bitmap, i);
                  if (t == available)       /* notfound */ break;
             else if (t == deleted);        /* skip */
             else if (_compare(data[i].first, key)) {
-                tomb_set(tombs, i, deleted);
+                bitmap_set(bitmap, i, deleted);
                 data[i].second = Value(0);
-                tomb_clear(tombs, i, occupied);
+                bitmap_clear(bitmap, i, occupied);
                 count--;
                 return;
             }
