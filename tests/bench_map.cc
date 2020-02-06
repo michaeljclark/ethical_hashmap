@@ -12,6 +12,37 @@
 
 using namespace std::chrono;
 
+#ifndef _WIN32
+std::string get_proc_info(const char *key)
+{
+    FILE *file;
+    char buf[1024];
+    char *line;
+
+    if (!(file = fopen("/proc/cpuinfo", "r"))) {
+        return "";
+    }
+
+    while ((line = fgets(buf, sizeof(buf), file)) != nullptr) {
+        std::string s(line);
+        if (s.find(key) != std::string::npos) {
+            size_t c = s.find(":");
+            return s.substr(c + 2, s.size() - c - 3);
+        }
+    }
+
+    fclose(file);
+    return "";
+}
+
+std::string get_cpu_model()
+{
+    std::string s = get_proc_info("model name");
+    size_t c = s.find("@");
+    return c != std::string::npos ? s.substr(0, c-1) : s;
+}
+#endif
+
 template <typename F>
 void insert_random(size_t limit, F fn)
 {
@@ -166,6 +197,11 @@ void bench_google_dense_hash_map(size_t count)
 
 void heading()
 {
+    printf("benchmark: zhashmap, dense_hash_map, std::unordered_map, std::map\n");
+#ifndef _WIN32
+    printf("cpu_model: %s\n", get_cpu_model().c_str());
+#endif
+    printf("\n");
     printf("|%-30s|%8s|%12s|%8s|\n",
         "container", "spread", "count", "time_ns");
     printf("|%-30s|%8s|%12s|%8s|\n",
