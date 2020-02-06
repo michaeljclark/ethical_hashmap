@@ -37,6 +37,15 @@ void test_hashmap_simple()
     }
 }
 
+void test_hashmap_delete()
+{
+    zhashmap<uintptr_t,uintptr_t> ht;
+    ht.insert(7, 8);
+    assert(ht.find(7)->second == 8);
+    ht.erase(7);
+    assert(ht.find(7) == ht.end());
+}
+
 template <typename F>
 void insert_random(size_t limit, F fn)
 {
@@ -69,6 +78,7 @@ void test_hashmap_random(size_t limit)
 int main(int argc, char **argv)
 {
     test_hashmap_simple();
+    test_hashmap_delete();
     test_hashmap_random(1<<16);
     return 0;
 }
