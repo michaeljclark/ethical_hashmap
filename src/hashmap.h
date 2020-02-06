@@ -286,9 +286,10 @@ struct hashmap
                 count++;
                 if (load() > load_factor) {
                     resize_internal(data, tombs, limit, limit << 1);
-                    i = 0; /* lost iterator position */
+                    return find(value.first);
+                } else {
+                    return iterator{this, i};
                 }
-                return iterator{this, i};
             } else if (_compare(data[i].first, value.first)) {
                 data[i].second = value.second;
                 return iterator{this, i};
