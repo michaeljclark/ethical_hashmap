@@ -357,8 +357,8 @@ struct hashmap
             else if (t == deleted);        /* skip */
             else if (_compare(data[i].first, key)) {
                 tomb_set(tombs, i, deleted);
-                tomb_clear(tombs, i, occupied);
                 data[i].second = Value(0);
+                tomb_clear(tombs, i, occupied);
                 count--;
                 return;
             }
