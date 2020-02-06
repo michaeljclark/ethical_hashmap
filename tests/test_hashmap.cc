@@ -26,7 +26,7 @@ void test_hashmap_simple()
         ht.insert(n->first, n->second);
     }
     for (const number_pair_t *n = numbers; n->first != 0; n++) {
-        assert(ht.lookup(n->first) == n->second);
+        assert(ht.find(n->first)->second == n->second);
     }
     for (auto ent : ht) {
         for (const number_pair_t *n = numbers; n->first != 0; n++) {
@@ -62,7 +62,7 @@ void test_hashmap_random(size_t limit)
     });
 
     for (auto &ent : hm) {
-        assert(ht.lookup(ent.first) == ent.second);
+        assert(ht.find(ent.first)->second == ent.second);
     }
 }
 

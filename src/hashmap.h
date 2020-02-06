@@ -152,6 +152,10 @@ struct hashmap
             i = shimmy(i);
             return &h->data[i];
         }
+        value_type* operator->() {
+            i = shimmy(i);
+            return &h->data[i];
+        }
     };
 
     iterator begin() { return iterator{ this, 0 }; }
@@ -206,21 +210,25 @@ struct hashmap
 
     void insert(Key key, Value val)
     {
-        size_t i = key_index(key);
+        insert(value_type(key, val));
+    }
+
+    void insert(const value_type& value)
+    {
+        size_t i = key_index(value.first);
         for (;;) {
             tomb_state t = tomb_get(tombs, i);
             if (t == available || t == deleted) {
                 /* available */
                 tomb_set(tombs, i, occupied);
-                data[i].first = key;
-                data[i].second = val;
+                data[i] = value;
                 count++;
                 if (load() > load_factor) {
                     resize(data, tombs, limit, limit << 1);
                 }
                 return;
-            } else if (data[i].first == key) {  /* found */
-                data[i].second = val;
+            } else if (data[i].first == value.first) {  /* found */
+                data[i].second = value.second;
                 return;
             }
             i = (i + 1) & index_mask();
@@ -249,17 +257,17 @@ struct hashmap
         }
     }
 
-    Value lookup(Key key)
+    iterator find(const Key &key)
     {
         size_t i = key_index(key);
         for (;;) {
             tomb_state t = tomb_get(tombs, i);
-                 if (t == available)           /* notfound */ break;
-            else if (t == deleted);            /* skip */
-            else if (data[i].first == key)     /* found */ return data[i].second;
+                 if (t == available)       /* notfound */ break;
+            else if (t == deleted);        /* skip */
+            else if (data[i].first == key) /* found */ return iterator{this, i};
             i = (i + 1) & index_mask();
         }
-        return Value(0);
+        return end();
     }
 
     void erase(Key key)

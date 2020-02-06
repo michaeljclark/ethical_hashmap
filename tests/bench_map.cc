@@ -86,7 +86,7 @@ void bench_hashmap_fnv(size_t count)
     }
     auto t2 = system_clock::now();
     for (auto &ent : data) {
-        assert(ht.lookup(ent.first) == ent.second);
+        assert(ht.find(ent.first)->second == ent.second);
     }
     auto t3 = system_clock::now();
 
@@ -104,7 +104,7 @@ void bench_hashmap_nop(size_t count)
     }
     auto t2 = system_clock::now();
     for (auto &ent : data) {
-        assert(ht.lookup(ent.first) == ent.second);
+        assert(ht.find(ent.first)->second == ent.second);
     }
     auto t3 = system_clock::now();
 
