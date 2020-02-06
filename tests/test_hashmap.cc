@@ -21,7 +21,7 @@ static const number_pair_t numbers[] = {
 
 void test_hashmap_simple()
 {
-    hashmap<uintptr_t,uintptr_t> ht;
+    zhashmap<uintptr_t,uintptr_t> ht;
     for (const number_pair_t *n = numbers; n->first != 0; n++) {
         ht.insert(n->first, n->second);
     }
@@ -53,7 +53,7 @@ void insert_random(size_t limit, F fn)
 
 void test_hashmap_random(size_t limit)
 {
-    hashmap<uintptr_t,uintptr_t> ht;
+    zhashmap<uintptr_t,uintptr_t> ht;
     std::map<uintptr_t,uintptr_t> hm;
 
     insert_random(limit, [&](size_t key, size_t val) {

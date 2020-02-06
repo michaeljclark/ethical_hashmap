@@ -12,7 +12,6 @@
 
 using namespace std::chrono;
 
-
 template <typename F>
 void insert_random(size_t limit, F fn)
 {
@@ -77,7 +76,7 @@ void bench_google(const char *name, size_t count, size_t spread)
 
 void bench_hashmap_fnv(size_t count)
 {
-    hashmap<uintptr_t,uintptr_t,hash_fnv> ht;
+    zhashmap<uintptr_t,uintptr_t,hash_fnv> ht;
 
     auto data = get_random(count);
     auto t1 = system_clock::now();
@@ -90,12 +89,12 @@ void bench_hashmap_fnv(size_t count)
     }
     auto t3 = system_clock::now();
 
-    print_timings("hashmap<FNV1amc>", t1, t2, t3, count);
+    print_timings("zhashmap<FNV1amc>", t1, t2, t3, count);
 }
 
 void bench_hashmap_nop(size_t count)
 {
-    hashmap<uintptr_t,uintptr_t,hash_ident> ht;
+    zhashmap<uintptr_t,uintptr_t,hash_ident> ht;
 
     auto data = get_random(count);
     auto t1 = system_clock::now();
@@ -108,7 +107,7 @@ void bench_hashmap_nop(size_t count)
     }
     auto t3 = system_clock::now();
 
-    print_timings("hashmap<ident>", t1, t2, t3, count);
+    print_timings("zhashmap<ident>", t1, t2, t3, count);
 }
 
 void bench_stdmap(size_t count)
@@ -192,13 +191,13 @@ int main(int argc, char **argv)
     bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,1023);
     bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,16383);
     bench_unmap(1000000);
-    bench_generic<hashmap<size_t,size_t,hash_fnv>>("hashmap<FNV1amc>::operator[]",10000000,255);
-    bench_generic<hashmap<size_t,size_t,hash_fnv>>("hashmap<FNV1amc>::operator[]",10000000,1023);
-    bench_generic<hashmap<size_t,size_t,hash_fnv>>("hashmap<FNV1amc>::operator[]",10000000,16383);
+    bench_generic<zhashmap<size_t,size_t,hash_fnv>>("zhashmap<FNV1amc>::operator[]",10000000,255);
+    bench_generic<zhashmap<size_t,size_t,hash_fnv>>("zhashmap<FNV1amc>::operator[]",10000000,1023);
+    bench_generic<zhashmap<size_t,size_t,hash_fnv>>("zhashmap<FNV1amc>::operator[]",10000000,16383);
     bench_hashmap_fnv(1000000);
-    bench_generic<hashmap<size_t,size_t,hash_ident>>("hashmap<ident>::operator[]",10000000,255);
-    bench_generic<hashmap<size_t,size_t,hash_ident>>("hashmap<ident>::operator[]",10000000,1023);
-    bench_generic<hashmap<size_t,size_t,hash_ident>>("hashmap<ident>::operator[]",10000000,16383);
+    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<ident>::operator[]",10000000,255);
+    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<ident>::operator[]",10000000,1023);
+    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<ident>::operator[]",10000000,16383);
     bench_hashmap_nop(1000000);
     bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,255);
     bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,1023);

@@ -1,5 +1,5 @@
 /*
- * hashmap - fast open addressing hash table with FNV hash function
+ * zhashmap - fast open addressing hash table with FNV hash function
  *
  * Copyright (c) 2020 Michael Clark <michaeljclark@mac.com>
  *
@@ -92,7 +92,7 @@ struct hash_ident
 template <class Key, class Value,
           class _Hash = hash_fnv,
           class _Pred = std::equal_to<Key>>
-struct hashmap
+struct zhashmap
 {
     /* parameters  */
     static const size_t default_size =    (2<<7);  /* 128 */
@@ -123,7 +123,7 @@ struct hashmap
      */
     struct iterator
     {
-        hashmap *h;
+        zhashmap *h;
         size_t i;
 
         size_t step(size_t i) {
@@ -142,8 +142,8 @@ struct hashmap
     /*
      * constructors and destructor
      */
-    inline hashmap() : hashmap(default_size) {}
-    inline hashmap(size_t initial_size) : count(0), limit(initial_size)
+    inline zhashmap() : zhashmap(default_size) {}
+    inline zhashmap(size_t initial_size) : count(0), limit(initial_size)
     {
         size_t data_size = sizeof(value_type) * initial_size;
         size_t bitmap_size = initial_size >> 2;
@@ -155,7 +155,7 @@ struct hashmap
         bitmap = (uint64_t*)((char*)data + data_size);
         memset(data, 0, total_size);
     }
-    inline ~hashmap() { free(data); }
+    inline ~zhashmap() { free(data); }
 
     /*
      * member functions
