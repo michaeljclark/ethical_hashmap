@@ -99,6 +99,10 @@ struct hashmap
     static const size_t load_factor =     (2<<15); /* 0.5 */
     static const size_t load_multiplier = (2<<16); /* 1.0 */
 
+    /* functors */
+    static inline _Hash _hasher;
+    static inline _Pred _compare;
+
     /* types  */
     typedef Key key_type;
     typedef Value mapped_type;
@@ -107,10 +111,6 @@ struct hashmap
     typedef _Hash hasher;
     typedef value_type& reference;
     typedef const value_type& const_reference;
-
-    /* functors */
-    hasher _hasher;
-    key_equal _compare;
 
     /* storage */
     size_t count;
