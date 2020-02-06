@@ -146,9 +146,9 @@ struct hashmap
             i = shimmy(i) + 1;
             return *this;
         }
-        value_type* operator*() {
+        value_type& operator*() {
             i = shimmy(i);
-            return &h->data[i];
+            return h->data[i];
         }
         value_type* operator->() {
             i = shimmy(i);

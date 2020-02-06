@@ -30,8 +30,8 @@ void test_hashmap_simple()
     }
     for (auto ent : ht) {
         for (const number_pair_t *n = numbers; n->first != 0; n++) {
-            if (ent->first == n->first) {
-                assert(ent->second == n->second);
+            if (ent.first == n->first) {
+                assert(ent.second == n->second);
             }
         }
     }
