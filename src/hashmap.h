@@ -116,41 +116,41 @@ struct hashmap
         recycled = 3
     };
 
-    static inline size_t tomb_idx(size_t idx) { return idx >> 5; }
-    static inline size_t tomb_shift(size_t idx) { return ((idx << 1) & 63); }
+    static inline size_t tomb_idx(size_t i) { return i >> 5; }
+    static inline size_t tomb_shift(size_t i) { return ((i << 1) & 63); }
 
-    static inline tomb_state tomb_get(uint64_t *tombs, size_t idx) {
-        return (tomb_state)((tombs[tomb_idx(idx)] >> tomb_shift(idx)) & 3);
+    static inline tomb_state tomb_get(uint64_t *tombs, size_t i) {
+        return (tomb_state)((tombs[tomb_idx(i)] >> tomb_shift(i)) & 3);
     }
-    static inline void tomb_set(uint64_t *tombs, size_t idx, uint64_t value) {
-        tombs[tomb_idx(idx)] |= (value << tomb_shift(idx));
+    static inline void tomb_set(uint64_t *tombs, size_t i, uint64_t value) {
+        tombs[tomb_idx(i)] |= (value << tomb_shift(i));
     }
-    static inline void tomb_clear(uint64_t *tombs, size_t idx, uint64_t value) {
-        tombs[tomb_idx(idx)] &= ~(value << tomb_shift(idx));
+    static inline void tomb_clear(uint64_t *tombs, size_t i, uint64_t value) {
+        tombs[tomb_idx(i)] &= ~(value << tomb_shift(i));
     }
 
     struct iterator {
         hashmap *h;
-        size_t idx;
+        size_t i;
 
         bool operator==(const iterator &o) const {
-            return std::tie(h, idx) == std::tie(o.h, o.idx);
+            return std::tie(h, i) == std::tie(o.h, o.i);
         }
         bool operator!=(const iterator &o) const {
-            return std::tie(h, idx) != std::tie(o.h, o.idx);
+            return std::tie(h, i) != std::tie(o.h, o.i);
         }
-        size_t shimmy(size_t idx) {
-            while (idx < h->limit &&
-                (tomb_get(h->tombs, idx) & occupied) != occupied) idx++;
-            return idx;
+        size_t shimmy(size_t i) {
+            while (i < h->limit &&
+                (tomb_get(h->tombs, i) & occupied) != occupied) i++;
+            return i;
         }
         iterator& operator++() {
-            idx = shimmy(idx + 1);
+            i = shimmy(i + 1);
             return *this;
         }
         value_type* operator*() {
-            idx = shimmy(idx);
-            return &h->data[idx];
+            i = shimmy(i);
+            return &h->data[i];
         }
     };
 
@@ -194,10 +194,10 @@ struct hashmap
         limit = new_size;
         memset(data, 0, total_size);
 
-        size_t idx = 0;
-        for (value_type *ent = old_data; ent != old_data + old_size; ent++, idx++) {
-            if ((tomb_get(old_tombs, idx) & occupied) == occupied) {
-                insert(ent->first, ent->second);
+        size_t i = 0;
+        for (value_type *v = old_data; v != old_data + old_size; v++, i++) {
+            if ((tomb_get(old_tombs, i) & occupied) == occupied) {
+                insert(v->first, v->second);
             }
         }
 
@@ -206,78 +206,78 @@ struct hashmap
 
     void insert(Key key, Value val)
     {
-        size_t idx = key_index(key);
+        size_t i = key_index(key);
         for (;;) {
-            tomb_state t = tomb_get(tombs, idx);
+            tomb_state t = tomb_get(tombs, i);
             if (t == available || t == deleted) {
                 /* available */
-                tomb_set(tombs, idx, occupied);
-                data[idx].first = key;
-                data[idx].second = val;
+                tomb_set(tombs, i, occupied);
+                data[i].first = key;
+                data[i].second = val;
                 count++;
                 if (load() > load_factor) {
                     resize(data, tombs, limit, limit << 1);
                 }
                 return;
-            } else if (data[idx].first == key) {  /* found */
-                data[idx].second = val;
+            } else if (data[i].first == key) {  /* found */
+                data[i].second = val;
                 return;
             }
-            idx = (idx + 1) & index_mask();
+            i = (i + 1) & index_mask();
         }
     }
 
     Value& operator[](const Key &key)
     {
-        size_t idx = key_index(key);
+        size_t i = key_index(key);
         for (;;) {
-            tomb_state t = tomb_get(tombs, idx);
+            tomb_state t = tomb_get(tombs, i);
             if (t == available || t == deleted) {
                 /* available */
-                tomb_set(tombs, idx, occupied);
-                data[idx].first = key;
+                tomb_set(tombs, i, occupied);
+                data[i].first = key;
                 count++;
                 if (load() > load_factor) {
                     resize(data, tombs, limit, limit << 1);
-                    idx = key_index(key);
+                    i = key_index(key);
                 }
-                return data[idx].second;
-            } else if (data[idx].first == key) {  /* found */
-                return data[idx].second;
+                return data[i].second;
+            } else if (data[i].first == key) {  /* found */
+                return data[i].second;
             }
-            idx = (idx + 1) & index_mask();
+            i = (i + 1) & index_mask();
         }
     }
 
     Value lookup(Key key)
     {
-        size_t idx = key_index(key);
+        size_t i = key_index(key);
         for (;;) {
-            tomb_state t = tomb_get(tombs, idx);
+            tomb_state t = tomb_get(tombs, i);
                  if (t == available)           /* notfound */ break;
             else if (t == deleted);            /* skip */
-            else if (data[idx].first == key)     /* found */ return data[idx].second;
-            idx = (idx + 1) & index_mask();
+            else if (data[i].first == key)     /* found */ return data[i].second;
+            i = (i + 1) & index_mask();
         }
         return Value(0);
     }
 
     void erase(Key key)
     {
-        size_t idx = key_index(key);
+        size_t i = key_index(key);
         for (;;) {
-            tomb_state t = tomb_get(tombs, idx);
+            tomb_state t = tomb_get(tombs, i);
                  if (t == available)           /* notfound */ break;
             else if (t == deleted);            /* skip */
-            else if (data[idx].first == key) {   /* found */
+            else if (data[i].first == key) {   /* found */
                 /* { recycled, occupied } -> deleted */
-                tomb_set(tombs, idx, deleted);
-                tomb_clear(tombs, idx, occupied);
-                data[idx].second = Value(0);
+                tomb_set(tombs, i, deleted);
+                tomb_clear(tombs, i, occupied);
+                data[i].second = Value(0);
                 count--;
                 return;
             }
-            idx = (idx + 1) & index_mask();
+            i = (i + 1) & index_mask();
         }
     }
 };
