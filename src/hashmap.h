@@ -24,7 +24,6 @@
 #include <cstddef>
 #include <cassert>
 
-#include <tuple>
 #include <utility>
 
 /*
@@ -128,10 +127,10 @@ struct hashmap
         size_t i;
 
         bool operator==(const iterator &o) const {
-            return std::tie(h, i) == std::tie(o.h, o.i);
+            return h == o.h && i == o.i;
         }
         bool operator!=(const iterator &o) const {
-            return std::tie(h, i) != std::tie(o.h, o.i);
+            return h != o.h || i != o.i;
         }
         size_t shimmy(size_t i) {
             while (i < h->limit &&
