@@ -9,6 +9,9 @@ This hashmap is an open-addressing hashtable similar to
 to eliminate necessity for empty or deleted key sentinels.
 This means the hash map could potentially be made into a
 drop-in replacement for `std::map` or `std::unordered_map`.
+The code supports enough of the C++ unordered associative
+container requirements such that it can be substituted for
+many typical use-cases.
 
 These small maps are useful for histograms and other frequently
 accessed data structures where performance is critical.
@@ -17,28 +20,6 @@ accessed data structures where performance is critical.
 
 The following benchmarks were performed on an Intel Core i9-7980XE
 using GCC 9.2:
-
-#### insert 1M records
-
-|container                     |  spread|       count| time_ns|
-|:---------------------------- |  -----:|       ----:| ------:|
-|dense_hash_map::insert        |  random|     1000000|    48.8|
-|zhashmap<ident>::insert       |  random|     1000000|    66.0|
-|zhashmap<FNV1amc>::insert     |  random|     1000000|    80.2|
-|std::unordered_map::insert    |  random|     1000000|   150.0|
-|java.util.HashMap::insert     |  random|     1000000|   194.0|
-|std::map::insert              |  random|     1000000|   386.2|
-
-#### lookup 1M records
-
-|container                     |  spread|       count| time_ns|
-|:---------------------------- |  -----:|       ----:| ------:|
-|zhashmap<ident>::lookup       |  random|     1000000|    17.9|
-|dense_hash_map::lookup        |  random|     1000000|    21.3|
-|java.util.HashMap::lookup     |  random|     1000000|    29.0|
-|zhashmap<FNV1amc>::lookup     |  random|     1000000|    43.1|
-|std::unordered_map::lookup    |  random|     1000000|    56.2|
-|std::map::lookup              |  random|     1000000|   384.7|
 
 #### update 10M mod 16383 records
 
