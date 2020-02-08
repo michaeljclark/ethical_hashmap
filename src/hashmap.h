@@ -28,46 +28,6 @@
 #include <functional>
 
 /*
- * FNV-1a hash algorithm
- *
- * The 64-bit word hash uses a rotate of the word so that
- * entropy in the key is permuted through all bit positions.
- */
-
-struct zhash_fnv
-{
-    static const uint64_t fnv_base = 0xcbf29ce484222325;
-    static const uint64_t fnv_prime = 0x100000001b3;
-
-    static inline uint64_t ror(uint64_t n, size_t s) {
-        return ((n >> s) | (n << (64-s)));
-    }
-
-    /* FNV-1amc hash function */
-    uint64_t operator()(uint64_t r) const
-    {
-        uint64_t h = fnv_base;
-        for (size_t i = 0; i < 64; i += 8) {
-            /* xor rotated 64-bit word (8x8 permute) */
-            h = h ^ ror(r, i);
-            h = h * fnv_prime;
-        }
-        return h;
-    }
-
-    /* FNV-1a hash function */
-    uint64_t operator()(const char *s) const
-    {
-        uint64_t h = fnv_base;
-        while (*s) {
-            h = h ^ *s++;
-            h = h * fnv_prime;
-        }
-        return h;
-    }
-};
-
-/*
  * Identity hash function
  *
  * The low complexity identity hash function works very well with
