@@ -194,8 +194,8 @@ struct zhashmap
     /**
      * insert element
      *
-     * @param key to insert
-     * @param val to insert
+     * @param i hint where to insert
+     * @param value to insert
      */
     iterator insert(iterator i, const value_type& value)
     {
