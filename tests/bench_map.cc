@@ -227,10 +227,10 @@ int main(int argc, char **argv)
     bench_generic<zhashmap<size_t,size_t,std::hash<uintptr_t>>>("zhashmap<std::hash>::operator[]",10000000,1023);
     bench_generic<zhashmap<size_t,size_t,std::hash<uintptr_t>>>("zhashmap<std::hash>::operator[]",10000000,16383);
     bench_zhashmap<std::hash<uintptr_t>>("zhashmap<std::hash>", 1000000);
-    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<hash_ident>::operator[]",10000000,255);
-    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<hash_ident>::operator[]",10000000,1023);
-    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<hash_ident>::operator[]",10000000,16383);
-    bench_zhashmap<hash_ident>("zhashmap<hash_ident>", 1000000);
+    bench_generic<zhashmap<size_t,size_t,zhash_ident>>("zhashmap<zhash_ident>::operator[]",10000000,255);
+    bench_generic<zhashmap<size_t,size_t,zhash_ident>>("zhashmap<zhash_ident>::operator[]",10000000,1023);
+    bench_generic<zhashmap<size_t,size_t,zhash_ident>>("zhashmap<zhash_ident>::operator[]",10000000,16383);
+    bench_zhashmap<zhash_ident>("zhashmap<zhash_ident>", 1000000);
     bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,255);
     bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,1023);
     bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,16383);

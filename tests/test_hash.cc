@@ -46,8 +46,8 @@ void test_hash_str()
 
 int main(int argc, char **argv)
 {
-    test_hash_str<hash_fnv>();
-    test_hash_int<hash_fnv>();
-    test_hash_int<hash_ident>();
+    test_hash_str<zhash_fnv>();
+    test_hash_int<zhash_fnv>();
+    test_hash_int<zhash_ident>();
     return 0;
 }

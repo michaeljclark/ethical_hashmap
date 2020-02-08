@@ -34,7 +34,7 @@
  * entropy in the key is permuted through all bit positions.
  */
 
-struct hash_fnv
+struct zhash_fnv
 {
     static const uint64_t fnv_base = 0xcbf29ce484222325;
     static const uint64_t fnv_prime = 0x100000001b3;
@@ -75,7 +75,7 @@ struct hash_fnv
  * like an array when keys are less than the table size.
  */
 
-struct hash_ident
+struct zhash_ident
 {
     uint64_t operator()(uint64_t r) const { return r; }
 };
