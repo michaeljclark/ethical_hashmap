@@ -90,7 +90,7 @@ struct hash_ident
  */
 
 template <class Key, class Value,
-          class _Hash = hash_fnv,
+          class _Hash = std::hash<Key>,
           class _Pred = std::equal_to<Key>>
 struct zhashmap
 {
