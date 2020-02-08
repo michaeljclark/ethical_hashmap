@@ -6,6 +6,10 @@
 #include <map>
 #include <unordered_map>
 #include <vector>
+#include <functional>
+
+#include "absl/hash/hash.h"
+#include "absl/container/flat_hash_map.h"
 
 #include "dense_hash_map"
 #include "hashmap.h"
@@ -71,10 +75,10 @@ void print_timings(const char *name, T t1, T t2, T t3, size_t count)
 {
     char buf[32];
     snprintf(buf, sizeof(buf), "%s::insert", name);
-    printf("|%-30s|%8s|%12zu|%8.1f|\n", buf, "random", count,
+    printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
         duration_cast<nanoseconds>(t2-t1).count()/(float)count);
     snprintf(buf, sizeof(buf), "%s::lookup", name);
-    printf("|%-30s|%8s|%12zu|%8.1f|\n", buf, "random", count,
+    printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
         duration_cast<nanoseconds>(t3-t2).count()/(float)count);
 }
 
@@ -87,7 +91,7 @@ void bench_generic(const char *name, size_t count, size_t spread)
         map[i&spread]++;
     }
     auto t2 = system_clock::now();
-    printf("|%-30s|%8zu|%12zu|%8.1f|\n", name, spread, count,
+    printf("|%-40s|%8zu|%12zu|%8.1f|\n", name, spread, count,
         duration_cast<nanoseconds>(t2-t1).count()/(float)count);
 }
 
@@ -101,13 +105,14 @@ void bench_google(const char *name, size_t count, size_t spread)
         map[i&spread]++;
     }
     auto t2 = system_clock::now();
-    printf("|%-30s|%8zu|%12zu|%8.1f|\n", name, spread, count,
+    printf("|%-40s|%8zu|%12zu|%8.1f|\n", name, spread, count,
         duration_cast<nanoseconds>(t2-t1).count()/(float)count);
 }
 
-void bench_hashmap_fnv(size_t count)
+template <typename HASH>
+void bench_zhashmap(const char* name, size_t count)
 {
-    zhashmap<uintptr_t,uintptr_t,hash_fnv> ht;
+    zhashmap<uintptr_t,uintptr_t,HASH> ht;
 
     auto data = get_random(count);
     auto t1 = system_clock::now();
@@ -120,25 +125,7 @@ void bench_hashmap_fnv(size_t count)
     }
     auto t3 = system_clock::now();
 
-    print_timings("zhashmap<FNV1amc>", t1, t2, t3, count);
-}
-
-void bench_hashmap_nop(size_t count)
-{
-    zhashmap<uintptr_t,uintptr_t,hash_ident> ht;
-
-    auto data = get_random(count);
-    auto t1 = system_clock::now();
-    for (auto &ent : data) {
-        ht.insert(ent.first, ent.second);
-    }
-    auto t2 = system_clock::now();
-    for (auto &ent : data) {
-        assert(ht.find(ent.first)->second == ent.second);
-    }
-    auto t3 = system_clock::now();
-
-    print_timings("zhashmap<ident>", t1, t2, t3, count);
+    print_timings(name, t1, t2, t3, count);
 }
 
 void bench_stdmap(size_t count)
@@ -192,7 +179,24 @@ void bench_google_dense_hash_map(size_t count)
         assert(hm[ent.first] == ent.second);
     }
     auto t3 = system_clock::now();
-    print_timings("dense_hash_map", t1, t2, t3, count);
+    print_timings("google::dense_hash_map", t1, t2, t3, count);
+}
+
+void bench_absl_flat_hash_map(size_t count)
+{
+    absl::flat_hash_map<uintptr_t,uintptr_t> hm;
+
+    auto data = get_random(count);
+    auto t1 = system_clock::now();
+    for (auto &ent : data) {
+        hm.insert(hm.end(), std::pair<uintptr_t,uintptr_t>(ent.first, ent.second));
+    }
+    auto t2 = system_clock::now();
+    for (auto &ent : data) {
+        assert(hm[ent.first] == ent.second);
+    }
+    auto t3 = system_clock::now();
+    print_timings("absl::flat_hash_map", t1, t2, t3, count);
 }
 
 void heading()
@@ -202,22 +206,14 @@ void heading()
     printf("cpu_model: %s\n", get_cpu_model().c_str());
 #endif
     printf("\n");
-    printf("|%-30s|%8s|%12s|%8s|\n",
+    printf("|%-40s|%8s|%12s|%8s|\n",
         "container", "spread", "count", "time_ns");
-    printf("|%-30s|%8s|%12s|%8s|\n",
-        ":----------------------------", "-----:", "----:", "------:");
+    printf("|%-40s|%8s|%12s|%8s|\n",
+        ":--------------------------------------", "-----:", "----:", "------:");
 }
 
 int main(int argc, char **argv)
 {
-    if (argc >= 2 && strcmp(argv[1], "hash_fnv") == 0) {
-        bench_hashmap_fnv(argc == 3 ? atoi(argv[2]) : 1000000);
-        return 0;
-    }
-    else if (argc >= 2 && strcmp(argv[1], "hash_ident") == 0) {
-        bench_hashmap_nop(argc == 3 ? atoi(argv[2]) : 1000000);
-        return 0;
-    }
     heading();
     bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,255);
     bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,1023);
@@ -227,16 +223,20 @@ int main(int argc, char **argv)
     bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,1023);
     bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,16383);
     bench_unmap(1000000);
-    bench_generic<zhashmap<size_t,size_t,hash_fnv>>("zhashmap<FNV1amc>::operator[]",10000000,255);
-    bench_generic<zhashmap<size_t,size_t,hash_fnv>>("zhashmap<FNV1amc>::operator[]",10000000,1023);
-    bench_generic<zhashmap<size_t,size_t,hash_fnv>>("zhashmap<FNV1amc>::operator[]",10000000,16383);
-    bench_hashmap_fnv(1000000);
-    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<ident>::operator[]",10000000,255);
-    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<ident>::operator[]",10000000,1023);
-    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<ident>::operator[]",10000000,16383);
-    bench_hashmap_nop(1000000);
+    bench_generic<zhashmap<size_t,size_t,std::hash<uintptr_t>>>("zhashmap<std::hash>::operator[]",10000000,255);
+    bench_generic<zhashmap<size_t,size_t,std::hash<uintptr_t>>>("zhashmap<std::hash>::operator[]",10000000,1023);
+    bench_generic<zhashmap<size_t,size_t,std::hash<uintptr_t>>>("zhashmap<std::hash>::operator[]",10000000,16383);
+    bench_zhashmap<std::hash<uintptr_t>>("zhashmap<std::hash>", 1000000);
+    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<hash_ident>::operator[]",10000000,255);
+    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<hash_ident>::operator[]",10000000,1023);
+    bench_generic<zhashmap<size_t,size_t,hash_ident>>("zhashmap<hash_ident>::operator[]",10000000,16383);
+    bench_zhashmap<hash_ident>("zhashmap<hash_ident>", 1000000);
     bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,255);
     bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,1023);
     bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,16383);
     bench_google_dense_hash_map(1000000);
+    bench_generic<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,255);
+    bench_generic<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,1023);
+    bench_generic<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,16383);
+    bench_absl_flat_hash_map(1000000);
 }

@@ -17,9 +17,14 @@ check_cxx_compiler_flag("-pg" has_gprof "int main() { return 0; }")
 #	add_compiler_flags(-pg)
 #endif()
 
+add_subdirectory(third_party/abseil-cpp)
+
 include_directories(src)
-include_directories(google)
+include_directories(third_party/google)
+include_directories(third_party/abseil-cpp)
 
 add_executable(bench_map tests/bench_map.cc)
+target_link_libraries(bench_map absl_hash absl_raw_hash_set)
+
 add_executable(test_hash tests/test_hash.cc)
 add_executable(test_hashmap tests/test_hashmap.cc)

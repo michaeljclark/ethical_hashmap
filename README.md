@@ -19,17 +19,30 @@ accessed data structures where performance is critical.
 ## Benchmarks
 
 The following benchmarks were performed on an Intel Core i9-7980XE
-using GCC 9.2:
+using GCC 9.2. Note this benchmark is somewhat contrived, but is
+intended to measure minimum latency for small histogram hashtables.
 
 #### update 10M mod 16383 records
 
-|container                     |  spread|       count| time_ns|
-|:---------------------------- |  -----:|       ----:| ------:|
-|zhashmap<ident>::operator[]   |   16383|    10000000|     1.8|
-|dense_hash_map::operator[]    |   16383|    10000000|     2.4|
-|std::unordered_map::operator[]|   16383|    10000000|     6.4|
-|zhashmap<FNV1amc>::operator[] |   16383|    10000000|     8.1|
-|std::map::operator[]          |   16383|    10000000|    56.3|
+|container                               |  spread|       count| time_ns|
+|:-------------------------------------- |  -----:|       ----:| ------:|
+|`zhashmap<hash_ident>::operator[]`      |   16383|    10000000|     1.8|
+|`zhashmap<std::hash>::operator[]`       |   16383|    10000000|     2.2|
+|`google::dense_hash_map::operator[]`    |   16383|    10000000|     2.4|
+|`absl::flat_hash_map::operator[]`       |   16383|    10000000|     4.1|
+|`std::unordered_map::operator[]`        |   16383|    10000000|     6.4|
+|`std::map::operator[]`                  |   16383|    10000000|    56.3|
+
+_**Notes:**_
+
+- `hash_ident` is the identity hash function
+
+```cpp
+struct hash_ident
+{
+    uint64_t operator()(uint64_t h) const { return h; }
+};
+```
 
 ## Code Analysis
 
