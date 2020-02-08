@@ -54,16 +54,13 @@ template <class Key, class Value,
           class _Pred = std::equal_to<Key>>
 struct zhashmap
 {
-    /* parameters  */
     static const size_t default_size =    (2<<7);  /* 128 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
     static const size_t load_multiplier = (2<<16); /* 1.0 */
 
-    /* functors */
     static inline _Hash _hasher;
     static inline _Pred _compare;
 
-    /* types  */
     typedef Key key_type;
     typedef Value mapped_type;
     typedef std::pair<Key, Value> value_type;
@@ -72,15 +69,15 @@ struct zhashmap
     typedef value_type& reference;
     typedef const value_type& const_reference;
 
-    /* storage */
     size_t count;
     size_t limit;
     value_type *data;
     uint64_t *bitmap;
 
     /*
-     * simple iterator
+     * scanning iterator
      */
+
     struct iterator
     {
         zhashmap *h;
@@ -102,6 +99,7 @@ struct zhashmap
     /*
      * constructors and destructor
      */
+
     inline zhashmap() : zhashmap(default_size) {}
     inline zhashmap(size_t initial_size) : count(0), limit(initial_size)
     {
@@ -120,6 +118,7 @@ struct zhashmap
     /*
      * member functions
      */
+
     inline size_t size() { return count; }
     inline size_t capacity() { return limit; }
     inline size_t load() { return count * load_multiplier / limit; }
@@ -131,8 +130,9 @@ struct zhashmap
     iterator end() { return iterator{ this, limit }; }
 
     /*
-     * bit manipulation
+     * bit manipulation helpers
      */
+
     enum bitmap_state {
         available = 0, occupied = 1, deleted = 2, recycled = 3
     };
@@ -153,8 +153,9 @@ struct zhashmap
     static inline bool is_pow2(intptr_t n) { return  ((n & -n) == n); }
 
     /**
-     * resize and rehash the table
+     * the implementation
      */
+
     void resize_internal(value_type *old_data, uint64_t *old_bitmap,
                          size_t old_size, size_t new_size)
     {
@@ -179,9 +180,6 @@ struct zhashmap
         free(old_data);
     }
 
-    /**
-     * clear the table
-     */
     void clear()
     {
         size_t data_size = sizeof(value_type) * limit;
@@ -191,33 +189,9 @@ struct zhashmap
         count = 0;
     }
 
-    /**
-     * insert element
-     *
-     * @param i hint where to insert
-     * @param value to insert
-     */
-    iterator insert(iterator i, const value_type& value)
-    {
-        return insert(value);
-    }
+    iterator insert(iterator i, const value_type& val) { return insert(val); }
+    iterator insert(Key key, Value val) { return insert(value_type(key, val)); }
 
-    /**
-     * insert element
-     *
-     * @param key to insert
-     * @param val to insert
-     */
-    iterator insert(Key key, Value val)
-    {
-        return insert(value_type(key, val));
-    }
-
-    /**
-     * insert element
-     *
-     * @param value_type to insert
-     */
     iterator insert(const value_type& value)
     {
         size_t i = key_index(value.first);
@@ -240,12 +214,6 @@ struct zhashmap
         }
     }
 
-    /**
-     * access element
-     *
-     * @param Key to find
-     * @returns iterator to the element or end if not found
-     */
     Value& operator[](const Key &key)
     {
         size_t i = key_index(key);
@@ -266,12 +234,6 @@ struct zhashmap
         }
     }
 
-    /**
-     * find iterator to element
-     *
-     * @param Key to find
-     * @returns iterator to the element or to end()
-     */
     iterator find(const Key &key)
     {
         size_t i = key_index(key);
@@ -285,11 +247,6 @@ struct zhashmap
         return end();
     }
 
-    /**
-     * erase element
-     *
-     * @param Key to erase
-     */
     void erase(Key key)
     {
         size_t i = key_index(key);
