@@ -152,7 +152,7 @@ void bench_map_google(const char* name, size_t count)
 
 void heading()
 {
-    printf("benchmark: zhashmap, dense_hash_map, std::unordered_map, std::map\n");
+    printf("benchmark: zedland::hashmap, dense_hash_map, std::unordered_map, std::map\n");
 #ifndef _WIN32
     printf("cpu_model: %s\n", get_cpu_model().c_str());
 #endif
@@ -174,10 +174,10 @@ int main(int argc, char **argv)
     bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,1023);
     bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,16383);
     bench_map<std::unordered_map<uintptr_t,uintptr_t>>("std::unordered_map", 1000000);
-    bench_spread<zhashmap<size_t,size_t>>("zhashmap<std::hash>::operator[]",10000000,255);
-    bench_spread<zhashmap<size_t,size_t>>("zhashmap<std::hash>::operator[]",10000000,1023);
-    bench_spread<zhashmap<size_t,size_t>>("zhashmap<std::hash>::operator[]",10000000,16383);
-    bench_map<zhashmap<uintptr_t,uintptr_t>>("zhashmap<std::hash>", 1000000);
+    bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",10000000,255);
+    bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",10000000,1023);
+    bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",10000000,16383);
+    bench_map<zedland::hashmap<uintptr_t,uintptr_t>>("zedland::hashmap", 1000000);
     bench_spread_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map::operator[]",10000000,255);
     bench_spread_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map::operator[]",10000000,1023);
     bench_spread_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map::operator[]",10000000,16383);

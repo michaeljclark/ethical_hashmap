@@ -26,7 +26,7 @@ intended to measure minimum latency for small histogram hashtables.
 
 |container                               |  spread|       count| time_ns|
 |:-------------------------------------- |  -----:|       ----:| ------:|
-|`zhashmap<std::hash>::operator[]`       |   16383|    10000000|     1.5|
+|`zedland::hashmap::operator[]`          |   16383|    10000000|     1.5|
 |`google::dense_hash_map::operator[]`    |   16383|    10000000|     2.8|
 |`absl::flat_hash_map::operator[]`       |   16383|    10000000|     4.0|
 |`std::unordered_map::operator[]`        |   16383|    10000000|     6.4|
@@ -34,7 +34,7 @@ intended to measure minimum latency for small histogram hashtables.
 
 _**Notes:**_
 
-- `zhash_ident` is the identity hash function
+- `zedland::hash_ident` is the identity hash function
 
 ```cpp
 struct hash_ident

@@ -27,6 +27,8 @@
 #include <utility>
 #include <functional>
 
+namespace zedland {
+
 /*
  * Identity hash function
  *
@@ -35,7 +37,7 @@
  * like an array when keys are less than the table size.
  */
 
-struct zhash_ident
+struct hash_ident
 {
     uint64_t operator()(uint64_t r) const { return r; }
 };
@@ -52,7 +54,7 @@ struct zhash_ident
 template <class Key, class Value,
           class _Hash = std::hash<Key>,
           class _Pred = std::equal_to<Key>>
-struct zhashmap
+struct hashmap
 {
     static const size_t default_size =    (2<<7);  /* 128 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
@@ -80,7 +82,7 @@ struct zhashmap
 
     struct iterator
     {
-        zhashmap *h;
+        hashmap *h;
         size_t i;
 
         size_t step(size_t i) {
@@ -100,8 +102,8 @@ struct zhashmap
      * constructors and destructor
      */
 
-    inline zhashmap() : zhashmap(default_size) {}
-    inline zhashmap(size_t initial_size) : count(0), limit(initial_size)
+    inline hashmap() : hashmap(default_size) {}
+    inline hashmap(size_t initial_size) : count(0), limit(initial_size)
     {
         size_t data_size = sizeof(value_type) * initial_size;
         size_t bitmap_size = initial_size >> 2;
@@ -113,7 +115,7 @@ struct zhashmap
         bitmap = (uint64_t*)((char*)data + data_size);
         memset(data, 0, total_size);
     }
-    inline ~zhashmap() { free(data); }
+    inline ~hashmap() { free(data); }
 
     /*
      * member functions
@@ -264,4 +266,6 @@ struct zhashmap
             i = (i + 1) & index_mask();
         }
     }
+};
+
 };
