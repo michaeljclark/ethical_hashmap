@@ -32,17 +32,6 @@ intended to measure minimum latency for small histogram hashtables.
 |`std::unordered_map::operator[]`        |   16383|    10000000|     6.4|
 |`std::map::operator[]`                  |   16383|    10000000|    55.7|
 
-_**Notes:**_
-
-- `zedland::hash_ident` is the identity hash function
-
-```cpp
-struct hash_ident
-{
-    uint64_t operator()(uint64_t h) const { return h; }
-};
-```
-
 ## Code Analysis
 
 The hashtable lookup code is 27 instructions of x86_64 code
