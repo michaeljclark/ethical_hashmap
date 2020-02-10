@@ -47,26 +47,24 @@ std::string get_cpu_model()
 }
 #endif
 
-template <typename F>
-void insert_random(size_t limit, F fn)
+struct rng
 {
     std::random_device random_device;
     std::default_random_engine random_engine;
-    std::uniform_int_distribution<uint64_t> random_dist;    
+    std::uniform_int_distribution<uint64_t> random_dist;
 
-    for (size_t i = 0; i < limit; i++) {
-        uint64_t key = random_dist(random_engine);
-        uint64_t val = random_dist(random_engine);
-        fn(key, val);
-    }
-}
+    template <typename T>
+    T get() { return random_dist(random_engine); }
+};
 
-std::vector<std::pair<uintptr_t,uintptr_t>> get_random(size_t count)
+template <typename K, typename V>
+std::vector<std::pair<K,V>> get_random(size_t count)
 {
-    std::vector<std::pair<uintptr_t,uintptr_t>> data;
-    insert_random(count, [&](size_t key, size_t val) {
-        data.push_back(std::pair<uintptr_t,uintptr_t>(key, val));
-    });
+    rng r;
+    std::vector<std::pair<K,V>> data;
+    for (size_t i = 0; i < count; i++) {
+        data.push_back(std::pair<K,V>(r.get<K>(), r.get<V>()));
+    };
     return data;
 }
 
@@ -83,7 +81,7 @@ void print_timings(const char *name, T t1, T t2, T t3, size_t count)
 }
 
 template <typename Map>
-void bench_generic(const char *name, size_t count, size_t spread)
+void bench_spread(const char *name, size_t count, size_t spread)
 {
     Map map;
     auto t1 = system_clock::now();
@@ -96,7 +94,7 @@ void bench_generic(const char *name, size_t count, size_t spread)
 }
 
 template <typename Map>
-void bench_google(const char *name, size_t count, size_t spread)
+void bench_spread_google(const char *name, size_t count, size_t spread)
 {
     Map map;
     map.set_empty_key(-1);
@@ -109,15 +107,17 @@ void bench_google(const char *name, size_t count, size_t spread)
         duration_cast<nanoseconds>(t2-t1).count()/(float)count);
 }
 
-template <typename HASH>
-void bench_zhashmap(const char* name, size_t count)
+template <typename Map>
+void bench_map(const char* name, size_t count)
 {
-    zhashmap<uintptr_t,uintptr_t,HASH> ht;
+    typedef std::pair<typename Map::key_type,typename Map::mapped_type> pair_type;
 
-    auto data = get_random(count);
+    Map ht;
+
+    auto data = get_random<uintptr_t,uintptr_t>(count);
     auto t1 = system_clock::now();
     for (auto &ent : data) {
-        ht.insert(ent.first, ent.second);
+        ht.insert(ht.end(), pair_type(ent.first, ent.second));
     }
     auto t2 = system_clock::now();
     for (auto &ent : data) {
@@ -128,75 +128,26 @@ void bench_zhashmap(const char* name, size_t count)
     print_timings(name, t1, t2, t3, count);
 }
 
-void bench_stdmap(size_t count)
+template <typename Map>
+void bench_map_google(const char* name, size_t count)
 {
-    std::map<uintptr_t,uintptr_t> hm;
+    typedef std::pair<typename Map::key_type,typename Map::mapped_type> pair_type;
 
-    auto data = get_random(count);
+    Map ht;
+    ht.set_empty_key(-1);
+
+    auto data = get_random<uintptr_t,uintptr_t>(count);
     auto t1 = system_clock::now();
     for (auto &ent : data) {
-        hm.insert(hm.end(), std::pair<uintptr_t,uintptr_t>(ent.first, ent.second));
+        ht.insert(ht.end(), pair_type(ent.first, ent.second));
     }
     auto t2 = system_clock::now();
     for (auto &ent : data) {
-        assert(hm[ent.first] == ent.second);
+        assert(ht.find(ent.first)->second == ent.second);
     }
     auto t3 = system_clock::now();
 
-    print_timings("std::map", t1, t2, t3, count);
-}
-
-void bench_unmap(size_t count)
-{
-    std::unordered_map<uintptr_t,uintptr_t> hm;
-
-    auto data = get_random(count);
-    auto t1 = system_clock::now();
-    for (auto &ent : data) {
-        hm.insert(hm.end(), std::pair<uintptr_t,uintptr_t>(ent.first, ent.second));
-    }
-    auto t2 = system_clock::now();
-    for (auto &ent : data) {
-        assert(hm[ent.first] == ent.second);
-    }
-    auto t3 = system_clock::now();
-
-    print_timings("std::unordered_map", t1, t2, t3, count);
-}
-
-void bench_google_dense_hash_map(size_t count)
-{
-    google::dense_hash_map<uintptr_t,uintptr_t> hm;
-    hm.set_empty_key(-1);
-
-    auto data = get_random(count);
-    auto t1 = system_clock::now();
-    for (auto &ent : data) {
-        hm.insert(hm.end(), std::pair<uintptr_t,uintptr_t>(ent.first, ent.second));
-    }
-    auto t2 = system_clock::now();
-    for (auto &ent : data) {
-        assert(hm[ent.first] == ent.second);
-    }
-    auto t3 = system_clock::now();
-    print_timings("google::dense_hash_map", t1, t2, t3, count);
-}
-
-void bench_absl_flat_hash_map(size_t count)
-{
-    absl::flat_hash_map<uintptr_t,uintptr_t> hm;
-
-    auto data = get_random(count);
-    auto t1 = system_clock::now();
-    for (auto &ent : data) {
-        hm.insert(hm.end(), std::pair<uintptr_t,uintptr_t>(ent.first, ent.second));
-    }
-    auto t2 = system_clock::now();
-    for (auto &ent : data) {
-        assert(hm[ent.first] == ent.second);
-    }
-    auto t3 = system_clock::now();
-    print_timings("absl::flat_hash_map", t1, t2, t3, count);
+    print_timings(name, t1, t2, t3, count);
 }
 
 void heading()
@@ -215,28 +166,24 @@ void heading()
 int main(int argc, char **argv)
 {
     heading();
-    bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,255);
-    bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,1023);
-    bench_generic<std::map<size_t,size_t>>("std::map::operator[]",10000000,16383);
-    bench_stdmap(1000000);
-    bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,255);
-    bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,1023);
-    bench_generic<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,16383);
-    bench_unmap(1000000);
-    bench_generic<zhashmap<size_t,size_t,std::hash<uintptr_t>>>("zhashmap<std::hash>::operator[]",10000000,255);
-    bench_generic<zhashmap<size_t,size_t,std::hash<uintptr_t>>>("zhashmap<std::hash>::operator[]",10000000,1023);
-    bench_generic<zhashmap<size_t,size_t,std::hash<uintptr_t>>>("zhashmap<std::hash>::operator[]",10000000,16383);
-    bench_zhashmap<std::hash<uintptr_t>>("zhashmap<std::hash>", 1000000);
-    bench_generic<zhashmap<size_t,size_t,zhash_ident>>("zhashmap<zhash_ident>::operator[]",10000000,255);
-    bench_generic<zhashmap<size_t,size_t,zhash_ident>>("zhashmap<zhash_ident>::operator[]",10000000,1023);
-    bench_generic<zhashmap<size_t,size_t,zhash_ident>>("zhashmap<zhash_ident>::operator[]",10000000,16383);
-    bench_zhashmap<zhash_ident>("zhashmap<zhash_ident>", 1000000);
-    bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,255);
-    bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,1023);
-    bench_google<google::dense_hash_map<uintptr_t,uintptr_t>>("dense_hash_map::operator[]",10000000,16383);
-    bench_google_dense_hash_map(1000000);
-    bench_generic<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,255);
-    bench_generic<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,1023);
-    bench_generic<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,16383);
-    bench_absl_flat_hash_map(1000000);
+    bench_spread<std::map<size_t,size_t>>("std::map::operator[]",10000000,255);
+    bench_spread<std::map<size_t,size_t>>("std::map::operator[]",10000000,1023);
+    bench_spread<std::map<size_t,size_t>>("std::map::operator[]",10000000,16383);
+    bench_map<std::map<uintptr_t,uintptr_t>>("std::map",1000000);
+    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,255);
+    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,1023);
+    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,16383);
+    bench_map<std::unordered_map<uintptr_t,uintptr_t>>("std::unordered_map", 1000000);
+    bench_spread<zhashmap<size_t,size_t>>("zhashmap<std::hash>::operator[]",10000000,255);
+    bench_spread<zhashmap<size_t,size_t>>("zhashmap<std::hash>::operator[]",10000000,1023);
+    bench_spread<zhashmap<size_t,size_t>>("zhashmap<std::hash>::operator[]",10000000,16383);
+    bench_map<zhashmap<uintptr_t,uintptr_t>>("zhashmap<std::hash>", 1000000);
+    bench_spread_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map::operator[]",10000000,255);
+    bench_spread_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map::operator[]",10000000,1023);
+    bench_spread_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map::operator[]",10000000,16383);
+    bench_map_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map", 1000000);
+    bench_spread<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,255);
+    bench_spread<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,1023);
+    bench_spread<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,16383);
+    bench_map<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map",1000000);
 }
