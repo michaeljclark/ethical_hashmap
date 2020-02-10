@@ -32,42 +32,6 @@ intended to measure minimum latency for small histogram hashtables.
 |`std::unordered_map::operator[]`        |   16383|    10000000|     6.4|
 |`std::map::operator[]`                  |   16383|    10000000|    55.7|
 
-## Code Analysis
-
-The hashtable lookup code is 27 instructions of x86_64 code
-when compiled with Clang 9.0:
-
-```
-find:
-            mov     rax, rdi
-            mov     r8, qword ptr [rsi]
-            mov     rdx, qword ptr [rdi + 8]
-            mov     r9, qword ptr [rdi + 24]
-            lea     r10, [rdx - 1]
-            mov     rsi, r10
-            and     rsi, r8
-            jmp     .LBB1_1
-.LBB1_6:    add     rsi, 1
-            and     rsi, r10
-.LBB1_1:    mov     rcx, rsi
-            shr     rcx, 5
-            mov     rdi, qword ptr [r9 + 8*rcx]
-            lea     ecx, [rsi + rsi]
-            shr     rdi, cl
-            and     edi, 3
-            cmp     edi, 2
-            je      .LBB1_6
-            test    edi, edi
-            je      .LBB1_5
-            mov     rcx, qword ptr [rax + 16]
-            mov     rdi, rsi
-            shl     rdi, 4
-            cmp     qword ptr [rcx + rdi], r8
-            jne     .LBB1_6
-            mov     rdx, rsi
-.LBB1_5:    ret
-```
-
 ## License
 
 This software is released under the ISC license:
