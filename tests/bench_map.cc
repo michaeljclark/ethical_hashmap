@@ -114,7 +114,7 @@ void bench_map(const char* name, size_t count)
 
     Map ht;
 
-    auto data = get_random<uintptr_t,uintptr_t>(count);
+    auto data = get_random<typename Map::key_type,typename Map::mapped_type>(count);
     auto t1 = system_clock::now();
     for (auto &ent : data) {
         ht.insert(ht.end(), pair_type(ent.first, ent.second));
@@ -136,7 +136,7 @@ void bench_map_google(const char* name, size_t count)
     Map ht;
     ht.set_empty_key(-1);
 
-    auto data = get_random<uintptr_t,uintptr_t>(count);
+    auto data = get_random<typename Map::key_type,typename Map::mapped_type>(count);
     auto t1 = system_clock::now();
     for (auto &ent : data) {
         ht.insert(ht.end(), pair_type(ent.first, ent.second));
@@ -169,21 +169,21 @@ int main(int argc, char **argv)
     bench_spread<std::map<size_t,size_t>>("std::map::operator[]",10000000,255);
     bench_spread<std::map<size_t,size_t>>("std::map::operator[]",10000000,1023);
     bench_spread<std::map<size_t,size_t>>("std::map::operator[]",10000000,16383);
-    bench_map<std::map<uintptr_t,uintptr_t>>("std::map",1000000);
+    bench_map<std::map<size_t,size_t>>("std::map",1000000);
     bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,255);
     bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,1023);
     bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,16383);
-    bench_map<std::unordered_map<uintptr_t,uintptr_t>>("std::unordered_map", 1000000);
+    bench_map<std::unordered_map<size_t,size_t>>("std::unordered_map", 1000000);
     bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",10000000,255);
     bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",10000000,1023);
     bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",10000000,16383);
-    bench_map<zedland::hashmap<uintptr_t,uintptr_t>>("zedland::hashmap", 1000000);
-    bench_spread_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map::operator[]",10000000,255);
-    bench_spread_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map::operator[]",10000000,1023);
-    bench_spread_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map::operator[]",10000000,16383);
-    bench_map_google<google::dense_hash_map<uintptr_t,uintptr_t>>("google::dense_hash_map", 1000000);
-    bench_spread<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,255);
-    bench_spread<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,1023);
-    bench_spread<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map::operator[]",10000000,16383);
-    bench_map<absl::flat_hash_map<uintptr_t,uintptr_t>>("absl::flat_hash_map",1000000);
+    bench_map<zedland::hashmap<size_t,size_t>>("zedland::hashmap", 1000000);
+    bench_spread_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map::operator[]",10000000,255);
+    bench_spread_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map::operator[]",10000000,1023);
+    bench_spread_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map::operator[]",10000000,16383);
+    bench_map_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map", 1000000);
+    bench_spread<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map::operator[]",10000000,255);
+    bench_spread<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map::operator[]",10000000,1023);
+    bench_spread<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map::operator[]",10000000,16383);
+    bench_map<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map",1000000);
 }
