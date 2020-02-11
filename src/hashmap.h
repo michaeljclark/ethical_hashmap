@@ -113,8 +113,8 @@ struct hashmap
     inline size_t hash_index(uint64_t h) { return h & index_mask(); }
     inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
     inline hasher hash_function() const { return _hasher; }
-    iterator begin() { return iterator{ this, 0 }; }
-    iterator end() { return iterator{ this, limit }; }
+    inline iterator begin() { return iterator{ this, 0 }; }
+    inline iterator end() { return iterator{ this, limit }; }
 
     /*
      * bit manipulation helpers
