@@ -193,7 +193,14 @@ struct hashmap
                 count++;
                 if (load() > load_factor) {
                     resize_internal(data, bitmap, limit, limit << 1);
-                    return find(v.first);
+                    for (i = key_index(v.first);; i = (i+1) & index_mask()) {
+                        bitmap_state state = bitmap_get(bitmap, i);
+                             if (state == available) abort();
+                        else if (state == deleted); /* skip */
+                        else if (_compare(data[i].first, v.first)) {
+                            return iterator{this, i};
+                        }
+                    }
                 } else {
                     return iterator{this, i};
                 }
@@ -213,7 +220,14 @@ struct hashmap
                 count++;
                 if (load() > load_factor) {
                     resize_internal(data, bitmap, limit, limit << 1);
-                    i = key_index(key);
+                    for (i = key_index(key);; i = (i+1) & index_mask()) {
+                        bitmap_state state = bitmap_get(bitmap, i);
+                             if (state == available) abort();
+                        else if (state == deleted); /* skip */
+                        else if (_compare(data[i].first, key)) {
+                            return data[i].second;
+                        }
+                    }
                 }
                 return data[i].second;
             } else if (_compare(data[i].first, key)) {
