@@ -26,11 +26,11 @@ intended to measure minimum latency for small histogram hashtables.
 
 |container                               |  spread|       count| time_ns|
 |:-------------------------------------- |  -----:|       ----:| ------:|
-|`zedland::hashmap::operator[]`          |   16383|    10000000|     1.5|
-|`google::dense_hash_map::operator[]`    |   16383|    10000000|     2.8|
+|`zedland::hashmap::operator[]`          |   16383|    10000000|     1.4|
+|`google::dense_hash_map::operator[]`    |   16383|    10000000|     2.1|
 |`absl::flat_hash_map::operator[]`       |   16383|    10000000|     4.0|
-|`std::unordered_map::operator[]`        |   16383|    10000000|     6.4|
-|`std::map::operator[]`                  |   16383|    10000000|    55.7|
+|`std::unordered_map::operator[]`        |   16383|    10000000|     6.3|
+|`std::map::operator[]`                  |   16383|    10000000|    51.9|
 
 ## License
 
