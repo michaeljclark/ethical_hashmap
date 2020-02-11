@@ -1,5 +1,5 @@
 /*
- * zhashmap - fast open addressing hash table
+ * Fast open addressing hash table with tombstone bit map.
  *
  * Copyright (c) 2020 Michael Clark <michaeljclark@mac.com>
  *
@@ -30,8 +30,6 @@
 namespace zedland {
 
 /*
- * hashmap - Fast open addressing hash map with tombstone bit map.
- *
  * This open addressing hashmap uses a 2-bit entry per slot bitmap
  * that eliminates the need for empty and deleted key sentinels.
  * The hashmap has a simple array of key and value pairs and the
