@@ -174,8 +174,13 @@ struct hashmap
 
         size_t i = 0;
         for (value_type *v = old_data; v != old_data + old_size; v++, i++) {
-            if ((bitmap_get(old_bitmap, i) & occupied) == occupied) {
-                insert(v->first, v->second);
+            if ((bitmap_get(old_bitmap, i) & occupied) != occupied) continue;
+            for (size_t j = key_index(v->first);; j = (j + 1) & index_mask()) {
+                if ((bitmap_get(bitmap, j) & occupied) != occupied) {
+                    bitmap_set(bitmap, j, occupied);
+                    data[j] = *v;
+                    break;
+                }
             }
         }
 
