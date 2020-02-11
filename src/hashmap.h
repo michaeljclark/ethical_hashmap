@@ -30,19 +30,6 @@
 namespace zedland {
 
 /*
- * Identity hash function
- *
- * The low complexity identity hash function works very well with
- * open-addressing hash tables, effectively making the table operate
- * like an array when keys are less than the table size.
- */
-
-struct hash_ident
-{
-    uint64_t operator()(uint64_t r) const { return r; }
-};
-
-/*
  * hashmap - Fast open addressing hash map with tombstone bit map.
  *
  * This open addressing hashmap uses a 2-bit entry per slot bitmap
