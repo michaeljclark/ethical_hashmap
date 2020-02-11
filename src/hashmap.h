@@ -90,7 +90,7 @@ struct hashmap
                    (bitmap_get(h->bitmap, i) & occupied) != occupied) i++;
             return i;
         }
-        iterator& operator++() { i = step(i + 1); return *this; }
+        iterator& operator++() { i = step(i+1); return *this; }
         iterator& operator++(int) { i = step(i) + 1; return *this; }
         value_type& operator*() { i = step(i); return h->data[i]; }
         value_type* operator->() { i = step(i); return &h->data[i]; }
@@ -175,7 +175,7 @@ struct hashmap
         size_t i = 0;
         for (value_type *v = old_data; v != old_data + old_size; v++, i++) {
             if ((bitmap_get(old_bitmap, i) & occupied) != occupied) continue;
-            for (size_t j = key_index(v->first);; j = (j + 1) & index_mask()) {
+            for (size_t j = key_index(v->first);; j = (j+1) & index_mask()) {
                 if ((bitmap_get(bitmap, j) & occupied) != occupied) {
                     bitmap_set(bitmap, j, occupied);
                     data[j] = *v;
@@ -201,7 +201,7 @@ struct hashmap
 
     iterator insert(const value_type& v)
     {
-        for (size_t i = key_index(v.first); ; i = (i + 1) & index_mask()) {
+        for (size_t i = key_index(v.first); ; i = (i+1) & index_mask()) {
             if ((bitmap_get(bitmap, i) & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
                 data[i] = v;
@@ -221,7 +221,7 @@ struct hashmap
 
     Value& operator[](const Key &key)
     {
-        for (size_t i = key_index(key); ; i = (i + 1) & index_mask()) {
+        for (size_t i = key_index(key); ; i = (i+1) & index_mask()) {
             if ((bitmap_get(bitmap, i) & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
                 data[i].first = key;
@@ -239,7 +239,7 @@ struct hashmap
 
     iterator find(const Key &key)
     {
-        for (size_t i = key_index(key); ; i = (i + 1) & index_mask()) {
+        for (size_t i = key_index(key); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
                  if (state == available)           /* notfound */ break;
             else if (state == deleted);            /* skip */
@@ -250,7 +250,7 @@ struct hashmap
 
     void erase(Key key)
     {
-        for (size_t i = key_index(key); ; i = (i + 1) & index_mask()) {
+        for (size_t i = key_index(key); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
                  if (state == available)           /* notfound */ break;
             else if (state == deleted);            /* skip */
