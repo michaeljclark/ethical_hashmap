@@ -194,32 +194,29 @@ struct hashmap
     iterator insert(iterator i, const value_type& val) { return insert(val); }
     iterator insert(Key key, Value val) { return insert(value_type(key, val)); }
 
-    iterator insert(const value_type& value)
+    iterator insert(const value_type& v)
     {
-        size_t i = key_index(value.first);
-        for (;;) {
+        for (size_t i = key_index(v.first); ; i = (i + 1) & index_mask()) {
             if ((bitmap_get(bitmap, i) & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
-                data[i] = value;
+                data[i] = v;
                 count++;
                 if (load() > load_factor) {
                     resize_internal(data, bitmap, limit, limit << 1);
-                    return find(value.first);
+                    return find(v.first);
                 } else {
                     return iterator{this, i};
                 }
-            } else if (_compare(data[i].first, value.first)) {
-                data[i].second = value.second;
+            } else if (_compare(data[i].first, v.first)) {
+                data[i].second = v.second;
                 return iterator{this, i};
             }
-            i = (i + 1) & index_mask();
         }
     }
 
     Value& operator[](const Key &key)
     {
-        size_t i = key_index(key);
-        for (;;) {
+        for (size_t i = key_index(key); ; i = (i + 1) & index_mask()) {
             if ((bitmap_get(bitmap, i) & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
                 data[i].first = key;
@@ -232,27 +229,23 @@ struct hashmap
             } else if (_compare(data[i].first, key)) {
                 return data[i].second;
             }
-            i = (i + 1) & index_mask();
         }
     }
 
     iterator find(const Key &key)
     {
-        size_t i = key_index(key);
-        for (;;) {
+        for (size_t i = key_index(key); ; i = (i + 1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
                  if (state == available)           /* notfound */ break;
             else if (state == deleted);            /* skip */
             else if (_compare(data[i].first, key)) return iterator{this, i};
-            i = (i + 1) & index_mask();
         }
         return end();
     }
 
     void erase(Key key)
     {
-        size_t i = key_index(key);
-        for (;;) {
+        for (size_t i = key_index(key); ; i = (i + 1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
                  if (state == available)           /* notfound */ break;
             else if (state == deleted);            /* skip */
@@ -263,7 +256,6 @@ struct hashmap
                 count--;
                 return;
             }
-            i = (i + 1) & index_mask();
         }
     }
 };
