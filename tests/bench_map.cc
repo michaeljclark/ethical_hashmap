@@ -10,7 +10,7 @@
 
 #include "absl/hash/hash.h"
 #include "absl/container/flat_hash_map.h"
-
+#include "tsl/robin_map.h"
 #include "dense_hash_map"
 #include "hashmap.h"
 
@@ -166,14 +166,10 @@ void heading()
 int main(int argc, char **argv)
 {
     heading();
-    bench_spread<std::map<size_t,size_t>>("std::map::operator[]",10000000,255);
-    bench_spread<std::map<size_t,size_t>>("std::map::operator[]",10000000,1023);
-    bench_spread<std::map<size_t,size_t>>("std::map::operator[]",10000000,16383);
-    bench_map<std::map<size_t,size_t>>("std::map",1000000);
-    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,255);
-    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,1023);
-    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,16383);
-    bench_map<std::unordered_map<size_t,size_t>>("std::unordered_map", 1000000);
+    bench_spread<tsl::robin_map<size_t,size_t>>("tsl::robin_map",10000000,255);
+    bench_spread<tsl::robin_map<size_t,size_t>>("tsl::robin_map",10000000,1023);
+    bench_spread<tsl::robin_map<size_t,size_t>>("tsl::robin_map",10000000,16383);
+    bench_map<tsl::robin_map<size_t,size_t>>("tsl::robin_map", 1000000);
     bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",10000000,255);
     bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",10000000,1023);
     bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",10000000,16383);
@@ -186,4 +182,8 @@ int main(int argc, char **argv)
     bench_spread<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map::operator[]",10000000,1023);
     bench_spread<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map::operator[]",10000000,16383);
     bench_map<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map",1000000);
+    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,255);
+    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,1023);
+    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",10000000,16383);
+    bench_map<std::unordered_map<size_t,size_t>>("std::unordered_map", 1000000);
 }

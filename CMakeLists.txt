@@ -22,6 +22,7 @@ add_subdirectory(third_party/abseil-cpp)
 include_directories(src)
 include_directories(third_party/google)
 include_directories(third_party/abseil-cpp)
+include_directories(third_party/robin-map/include)
 
 add_executable(bench_map tests/bench_map.cc)
 target_link_libraries(bench_map absl_hash absl_raw_hash_set)
