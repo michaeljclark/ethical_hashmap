@@ -41,7 +41,7 @@ template <class Key, class Value,
           class _Pred = std::equal_to<Key>>
 struct hashmap
 {
-    static const size_t default_size =    (2<<7);  /* 128 */
+    static const size_t default_size =    (2<<3);  /* 16 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
     static const size_t load_multiplier = (2<<16); /* 1.0 */
 
