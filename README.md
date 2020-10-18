@@ -35,59 +35,49 @@ intended to measure minimum latency for small histogram hashtables.
 
 #### 10M records - insert, clear, insert, erase, insert, lookup
 
-|container                               |  spread|       count| time_ns|duration|
-|:-------------------------------------- |  -----:|       ----:| ------:| ------:|
-|std::unordered_map::insert              |  random|    10000000|   380.8|   3.808|
-|std::unordered_map::clear               |  random|    10000000|    68.3|   0.683|
-|std::unordered_map::insert              |  random|    10000000|   223.5|   2.235|
-|std::unordered_map::erase               |  random|    10000000|   263.8|   2.638|
-|std::unordered_map::insert              |  random|    10000000|   223.9|   2.239|
-|std::unordered_map::lookup              |  random|    10000000|    72.9|   0.729|
-
-|container                               |  spread|       count| time_ns|duration|
-|:-------------------------------------- |  -----:|       ----:| ------:| ------:|
-|tsl::robin_map::insert                  |  random|    10000000|    87.1|   0.871|
-|tsl::robin_map::clear                   |  random|    10000000|     9.8|   0.098|
-|tsl::robin_map::insert                  |  random|    10000000|    27.5|   0.275|
-|tsl::robin_map::erase                   |  random|    10000000|    27.8|   0.278|
-|tsl::robin_map::insert                  |  random|    10000000|    28.5|   0.285|
-|tsl::robin_map::lookup                  |  random|    10000000|    19.8|   0.198|
-
-|container                               |  spread|       count| time_ns|duration|
-|:-------------------------------------- |  -----:|       ----:| ------:| ------:|
-|zedland::hashmap::insert                |  random|    10000000|    67.3|   0.673|
-|zedland::hashmap::clear                 |  random|    10000000|     2.2|   0.022|
-|zedland::hashmap::insert                |  random|    10000000|    23.1|   0.231|
-|zedland::hashmap::erase                 |  random|    10000000|    29.7|   0.297|
-|zedland::hashmap::insert                |  random|    10000000|    23.2|   0.232|
-|zedland::hashmap::lookup                |  random|    10000000|    27.4|   0.274|
-
-|container                               |  spread|       count| time_ns|duration|
-|:-------------------------------------- |  -----:|       ----:| ------:| ------:|
-|zedland::linkedhashmap::insert          |  random|    10000000|   270.2|   2.702|
-|zedland::linkedhashmap::clear           |  random|    10000000|     3.4|   0.034|
-|zedland::linkedhashmap::insert          |  random|    10000000|    26.4|   0.264|
-|zedland::linkedhashmap::erase           |  random|    10000000|   113.4|   1.134|
-|zedland::linkedhashmap::insert          |  random|    10000000|    26.9|   0.269|
-|zedland::linkedhashmap::lookup          |  random|    10000000|    26.2|   0.262|
-
-|container                               |  spread|       count| time_ns|duration|
-|:-------------------------------------- |  -----:|       ----:| ------:| ------:|
-|google::dense_hash_map::insert          |  random|    10000000|    83.0|   0.830|
-|google::dense_hash_map::clear           |  random|    10000000|     1.0|   0.010|
-|google::dense_hash_map::insert          |  random|    10000000|    83.0|   0.830|
-|google::dense_hash_map::erase           |  random|    10000000|    36.9|   0.369|
-|google::dense_hash_map::insert          |  random|    10000000|    93.2|   0.932|
-|google::dense_hash_map::lookup          |  random|    10000000|    24.6|   0.246|
-
-|container                               |  spread|       count| time_ns|duration|
-|:-------------------------------------- |  -----:|       ----:| ------:| ------:|
-|absl::flat_hash_map::insert             |  random|    10000000|    70.6|   0.706|
-|absl::flat_hash_map::clear              |  random|    10000000|     0.7|   0.007|
-|absl::flat_hash_map::insert             |  random|    10000000|    72.2|   0.722|
-|absl::flat_hash_map::erase              |  random|    10000000|   106.7|   1.067|
-|absl::flat_hash_map::insert             |  random|    10000000|    55.6|   0.556|
-|absl::flat_hash_map::lookup             |  random|    10000000|    33.9|   0.339|
+|container                               |  spread|       count| time_ns|
+|:-------------------------------------- |  -----:|       ----:| ------:|
+|`std::unordered_map::insert`            |  random|    10000000|   380.8|
+|`std::unordered_map::clear`             |  random|    10000000|    68.3|
+|`std::unordered_map::insert`            |  random|    10000000|   223.5|
+|`std::unordered_map::erase`             |  random|    10000000|   263.8|
+|`std::unordered_map::insert`            |  random|    10000000|   223.9|
+|`std::unordered_map::lookup`            |  random|    10000000|    72.9|
+|-                                       |       -|           -|       -|
+|`tsl::robin_map::insert`                |  random|    10000000|    87.1|
+|`tsl::robin_map::clear`                 |  random|    10000000|     9.8|
+|`tsl::robin_map::insert`                |  random|    10000000|    27.5|
+|`tsl::robin_map::erase`                 |  random|    10000000|    27.8|
+|`tsl::robin_map::insert`                |  random|    10000000|    28.5|
+|`tsl::robin_map::lookup`                |  random|    10000000|    19.8|
+|-                                       |       -|           -|       -|
+|`zedland::hashmap::insert`              |  random|    10000000|    67.3|
+|`zedland::hashmap::clear`               |  random|    10000000|     2.2|
+|`zedland::hashmap::insert`              |  random|    10000000|    23.1|
+|`zedland::hashmap::erase`               |  random|    10000000|    29.7|
+|`zedland::hashmap::insert`              |  random|    10000000|    23.2|
+|`zedland::hashmap::lookup`              |  random|    10000000|    27.4|
+|-                                       |       -|           -|       -|
+|`zedland::linkedhashmap::insert`        |  random|    10000000|   270.2|
+|`zedland::linkedhashmap::clear`         |  random|    10000000|     3.4|
+|`zedland::linkedhashmap::insert`        |  random|    10000000|    26.4|
+|`zedland::linkedhashmap::erase`         |  random|    10000000|   113.4|
+|`zedland::linkedhashmap::insert`        |  random|    10000000|    26.9|
+|`zedland::linkedhashmap::lookup`        |  random|    10000000|    26.2|
+|-                                       |       -|           -|       -|
+|`google::dense_hash_map::insert`        |  random|    10000000|    83.0|
+|`google::dense_hash_map::clear`         |  random|    10000000|     1.0|
+|`google::dense_hash_map::insert`        |  random|    10000000|    83.0|
+|`google::dense_hash_map::erase`         |  random|    10000000|    36.9|
+|`google::dense_hash_map::insert`        |  random|    10000000|    93.2|
+|`google::dense_hash_map::lookup`        |  random|    10000000|    24.6|
+|-                                       |       -|           -|       -|
+|`absl::flat_hash_map::insert`           |  random|    10000000|    70.6|
+|`absl::flat_hash_map::clear`            |  random|    10000000|     0.7|
+|`absl::flat_hash_map::insert`           |  random|    10000000|    72.2|
+|`absl::flat_hash_map::erase`            |  random|    10000000|   106.7|
+|`absl::flat_hash_map::insert`           |  random|    10000000|    55.6|
+|`absl::flat_hash_map::lookup`           |  random|    10000000|    33.9|
 
 ## License
 
