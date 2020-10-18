@@ -1,28 +1,130 @@
 # zhashmap
 
-Fast open addressing hash table and linked hash table in C++.
+High performance compact C++ hashmaps:
+
+- `hashmap`       - _open addressing hash table._
+- `linkedhashmap` - _open addressing hash table and
+                     combined bidirectional link-list._
 
 ## Overview
 
-This hashmap is an open-addressing hashtable similar to
-`google/dense_hash_map`, however, it uses tombstone bitmaps
-to eliminate necessity for empty or deleted key sentinels.
-This means the hash map could potentially be made into a
-drop-in replacement for `std::map` or `std::unordered_map`.
-The code supports enough of the C++ unordered associative
-container requirements such that it can be substituted for
-many typical use-cases.
+These hashmaps are open-addressing hashtables similar to
+`google/dense_hash_map`, but they use tombstone bitmaps to
+eliminate necessity for empty or deleted key sentinels.
 
-These small maps are useful for histograms and other frequently
-accessed data structures where performance is critical.
+- _hashmap_
+  - Fast open addressing hash table tuned for small maps such as
+    for histograms and other performance critical maps.
+- _linkedhashmap_
+  - Fast open addressing hash table with bidirectional link list
+    tuned for small maps that need predictable iteration order as
+    well as high performance.
+
+These containers implement most of the C++ unordered associative
+container requrements thus can be substituted for `unordered_map`
+and typical use cases including C++11 _for-loop_.
+
+There is currently no equivalent to `linkedhashmap` in the STL so it
+is perhaps somewhat of an `ordered_map` implementation.
+
+
+## Design 
+
+These maps are designed for small memory foorprint. There is one
+structure and one heap allocation which is divided between an array
+of _tuples_ composed of _(Key, Value)_ and a tombstone bitmap. _Key_
+is hashed to index into the open addressing array, and collisions are
+handled by skipping to the next available slot.
+
+Deletions requires the use of tombstones. Sentinel key values occupy
+key-space, and make containers incompatible with associative container
+requirements, thus a 2-bit tombstone array is used. 2-bits are used
+to distinguish _available_, _occupied_, and _deleted_ states.
+
+``
+    enum bitmap_state {
+        available = 0, occupied = 1, deleted = 2, recycled = 3
+    };
+``
+
+_linkedhashmap_ adds _(next, prev)_ indices to the array _tuple_,
+_(head, tail)_ indices to the structure.
+
+The source code has almost zero comments but is written to be concise
+and easy to understand.
+
+### Memory usage
+
+The follow table shows memory usage for the default 16 slot map
+_(table units are in bytes)_:
+
+| map            |     struct | (data+bmap) | malloc |
+|:-------------- | ----------:| -----------:| ------:|
+|`hashmap`       |         32 |     (256+4) |    260 |
+|`linkedhashmap` |         40 |     (384+4) |    388 |
+
+### Data structure
+
+These extracts from the source show the array data structure.
+
+#### _hashmap_ parameters and table structure
+
+```
+template <class Key, class Value,
+          class _Hash = std::hash<Key>,
+          class _Pred = std::equal_to<Key>>
+struct hashmap
+{
+    static const size_t default_size =    (2<<3);  /* 16 */
+    static const size_t load_factor =     (2<<15); /* 0.5 */
+    static const size_t load_multiplier = (2<<16); /* 1.0 */
+    ...
+    struct data_type {
+        Key first;
+        Value second;
+    };	
+}
+```
+
+#### _linkedhashmap_ parameters and table structure
+
+```
+template <class Key, class Value,
+          class _Hash = std::hash<Key>,
+          class _Pred = std::equal_to<Key>,
+          class _Offset = int32_t>
+struct linkedhashmap
+{
+    static const size_t default_size =    (2<<3);  /* 16 */
+    static const size_t load_factor =     (2<<15); /* 0.5 */
+    static const size_t load_multiplier = (2<<16); /* 1.0 */
+    ...
+    struct data_type {
+        Key first;
+        Value second;
+        _Offset prev;
+        _Offset next;
+    };
+}
+```
 
 ## Benchmarks
 
-The following benchmarks were performed on an Intel Core i9-7980XE
-using GCC 9.2. Note this benchmark is somewhat contrived, but is
-intended to measure minimum latency for small histogram hashtables.
+The following benchmarks were performed on an _Intel Core i9-7980XE_
+with GCC 9.2.
+
+These benchmarks are not exhaustive. It can be seen that the maps have
+different performance characteristics depending on use. Benchmarks show
+the implementation is competitive with `tsl::robin_map`, probably the
+fastest C++ hashtable in existence, and consistently faster than
+`google::dense_hash_map` and `absl::flat_hash_map`.
+
+There are many cases where `zedland::hashmap` is the fastest map.
 
 #### update 10M mod 16383 records
+
+Simple benchmark intended to show the access latency for small maps
+with relatively constant set of keys, such as use for histograms.
 
 |container                               |  spread|       count| time_ns|
 |:-------------------------------------- |  -----:|       ----:| ------:|
@@ -34,6 +136,9 @@ intended to measure minimum latency for small histogram hashtables.
 |`std::unordered_map::operator[]`        |   16383|    10000000|     6.3|
 
 #### 10M records - insert, clear, insert, erase, insert, lookup
+
+The first insert operation includes resize and rehash. The subsequent
+insert operations shows insertion speed when the table has expanded.
 
 |container                               |  spread|       count| time_ns|
 |:-------------------------------------- |  -----:|       ----:| ------:|
