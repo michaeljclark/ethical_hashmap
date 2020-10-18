@@ -15,6 +15,7 @@
 
 #include "dense_hash_map"
 #include "hashmap.h"
+#include "linkedhashmap.h"
 
 using namespace std::chrono;
 
@@ -238,6 +239,7 @@ int main(int argc, char **argv)
         bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",count,*s);
         bench_spread<tsl::robin_map<size_t,size_t>>("tsl::robin_map::operator[]",count,*s);
         bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",count,*s);
+        bench_spread<zedland::linkedhashmap<size_t,size_t>>("zedland::linkedhashmap::operator[]",count,*s);
         bench_spread_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map::operator[]",count,*s);
         bench_spread<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map::operator[]",count,*s);
     }
@@ -246,6 +248,7 @@ int main(int argc, char **argv)
     bench_map<std::unordered_map<size_t,size_t>>("std::unordered_map", count);
     bench_map<tsl::robin_map<size_t,size_t>>("tsl::robin_map", count);
     bench_map<zedland::hashmap<size_t,size_t>>("zedland::hashmap", count);
+    bench_map<zedland::linkedhashmap<size_t,size_t>>("zedland::linkedhashmap", count);
     bench_map_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map", count);
     bench_map<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map",count);
 }

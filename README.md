@@ -1,6 +1,6 @@
 # zhashmap
 
-Fast open addressing hash table in C++.
+Fast open addressing hash table and linked hash table in C++.
 
 ## Overview
 
@@ -28,6 +28,7 @@ intended to measure minimum latency for small histogram hashtables.
 |:-------------------------------------- |  -----:|       ----:| ------:|
 |`tsl::robin_map`                        |   16383|    10000000|     0.9|
 |`zedland::hashmap::operator[]`          |   16383|    10000000|     1.4|
+|`zedland::linkedhashmap::operator[]`    |   16383|    10000000|     2.0|
 |`google::dense_hash_map::operator[]`    |   16383|    10000000|     2.1|
 |`absl::flat_hash_map::operator[]`       |   16383|    10000000|     4.0|
 |`std::unordered_map::operator[]`        |   16383|    10000000|     6.3|
@@ -60,6 +61,15 @@ intended to measure minimum latency for small histogram hashtables.
 |zedland::hashmap::erase                 |  random|    10000000|    29.7|   0.297|
 |zedland::hashmap::insert                |  random|    10000000|    23.2|   0.232|
 |zedland::hashmap::lookup                |  random|    10000000|    27.4|   0.274|
+
+|container                               |  spread|       count| time_ns|duration|
+|:-------------------------------------- |  -----:|       ----:| ------:| ------:|
+|zedland::linkedhashmap::insert          |  random|    10000000|   270.2|   2.702|
+|zedland::linkedhashmap::clear           |  random|    10000000|     3.4|   0.034|
+|zedland::linkedhashmap::insert          |  random|    10000000|    26.4|   0.264|
+|zedland::linkedhashmap::erase           |  random|    10000000|   113.4|   1.134|
+|zedland::linkedhashmap::insert          |  random|    10000000|    26.9|   0.269|
+|zedland::linkedhashmap::lookup          |  random|    10000000|    26.2|   0.262|
 
 |container                               |  spread|       count| time_ns|duration|
 |:-------------------------------------- |  -----:|       ----:| ------:| ------:|

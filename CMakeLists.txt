@@ -28,3 +28,4 @@ add_executable(bench_map tests/bench_map.cc)
 target_link_libraries(bench_map absl_hash absl_raw_hash_set)
 
 add_executable(test_hashmap tests/test_hashmap.cc)
+add_executable(test_linkedhashmap tests/test_linkedhashmap.cc)
