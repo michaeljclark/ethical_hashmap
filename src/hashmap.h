@@ -81,7 +81,7 @@ struct hashmap
             return i;
         }
         iterator& operator++() { i = step(i+1); return *this; }
-        iterator& operator++(int) { i = step(i) + 1; return *this; }
+        iterator operator++(int) { iterator r = *this; ++(*this); return r; }
         data_type& operator*() { i = step(i); return h->data[i]; }
         data_type* operator->() { i = step(i); return &h->data[i]; }
         bool operator==(const iterator &o) const { return h == o.h && i == o.i; }
