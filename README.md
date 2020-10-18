@@ -60,8 +60,8 @@ _(table units are in bytes)_:
 
 | map            |     struct | (data+bmap) | malloc |
 |:-------------- | ----------:| -----------:| ------:|
-|`hashmap`       |         32 |     (256+4) |    260 |
-|`linkedhashmap` |         40 |     (384+4) |    388 |
+|`hashmap`       |         40 |     (256+4) |    260 |
+|`linkedhashmap` |         48 |     (384+4) |    388 |
 
 ### Data structure
 

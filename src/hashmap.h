@@ -61,7 +61,8 @@ struct hashmap
     typedef data_type& reference;
     typedef const data_type& const_reference;
 
-    size_t count;
+    size_t used;
+    size_t tombs;
     size_t limit;
     data_type *data;
     uint64_t *bitmap;
@@ -93,7 +94,8 @@ struct hashmap
      */
 
     inline hashmap() : hashmap(default_size) {}
-    inline hashmap(size_t initial_size) : count(0), limit(initial_size)
+    inline hashmap(size_t initial_size) :
+        used(0), tombs(0), limit(initial_size)
     {
         size_t data_size = sizeof(data_type) * initial_size;
         size_t bitmap_size = initial_size >> 2;
@@ -111,9 +113,9 @@ struct hashmap
      * member functions
      */
 
-    inline size_t size() { return count; }
+    inline size_t size() { return used; }
     inline size_t capacity() { return limit; }
-    inline size_t load() { return count * load_multiplier / limit; }
+    inline size_t load() { return (used + tombs) * load_multiplier / limit; }
     inline size_t index_mask() { return limit - 1; }
     inline size_t hash_index(uint64_t h) { return h & index_mask(); }
     inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
@@ -174,6 +176,7 @@ struct hashmap
             }
         }
 
+        tombs = 0;
         free(old_data);
     }
 
@@ -183,7 +186,7 @@ struct hashmap
         size_t bitmap_size = limit >> 2;
         size_t total_size = data_size + bitmap_size;
         memset(data, 0, total_size);
-        count = 0;
+        used = tombs = 0;
     }
 
     iterator insert(iterator i, const value_type& val) { return insert(val); }
@@ -192,10 +195,12 @@ struct hashmap
     iterator insert(const value_type& v)
     {
         for (size_t i = key_index(v.first); ; i = (i+1) & index_mask()) {
-            if ((bitmap_get(bitmap, i) & occupied) != occupied) {
+            bitmap_state state = bitmap_get(bitmap, i);
+            if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
                 data[i] = data_type{v.first, v.second};
-                count++;
+                used++;
+                if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
                     resize_internal(data, bitmap, limit, limit << 1);
                     for (i = key_index(v.first); ; i = (i+1) & index_mask()) {
@@ -219,10 +224,12 @@ struct hashmap
     Value& operator[](const Key &key)
     {
         for (size_t i = key_index(key); ; i = (i+1) & index_mask()) {
-            if ((bitmap_get(bitmap, i) & occupied) != occupied) {
+            bitmap_state state = bitmap_get(bitmap, i);
+            if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
                 data[i].first = key;
-                count++;
+                used++;
+                if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
                     resize_internal(data, bitmap, limit, limit << 1);
                     for (i = key_index(key);; i = (i+1) & index_mask()) {
@@ -262,7 +269,8 @@ struct hashmap
                 bitmap_set(bitmap, i, deleted);
                 data[i].second = Value(0);
                 bitmap_clear(bitmap, i, occupied);
-                count--;
+                used--;
+                tombs++;
                 return;
             }
         }
