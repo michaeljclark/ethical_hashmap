@@ -26,7 +26,7 @@ intended to measure minimum latency for small histogram hashtables.
 
 |container                               |  spread|       count| time_ns|
 |:-------------------------------------- |  -----:|       ----:| ------:|
-|`tsl::robin_map`                        |   16383|    10000000|     0.9|
+|`tsl::robin_map::operator[]`            |   16383|    10000000|     0.9|
 |`zedland::hashmap::operator[]`          |   16383|    10000000|     1.4|
 |`zedland::linkedhashmap::operator[]`    |   16383|    10000000|     2.0|
 |`google::dense_hash_map::operator[]`    |   16383|    10000000|     2.1|
