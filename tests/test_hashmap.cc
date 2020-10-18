@@ -22,6 +22,7 @@ static const number_pair_t numbers[] = {
 void test_hashmap_simple()
 {
     zedland::hashmap<uintptr_t,uintptr_t> ht;
+
     for (const number_pair_t *n = numbers; n->first != 0; n++) {
         ht.insert(n->first, n->second);
     }
@@ -44,6 +45,20 @@ void test_hashmap_delete()
     assert(ht.find(7)->second == 8);
     ht.erase(7);
     assert(ht.find(7) == ht.end());
+}
+
+void test_hashmap_noloop()
+{
+    zedland::hashmap<int, int> h(4);
+
+    // Fill the table with tombstones.
+    for (size_t i = 0; i < 4; i++) {
+        h[i];
+        h.erase(i);
+    }
+
+    // Infinite loop.
+    h.find(0);
 }
 
 template <typename F>
@@ -79,6 +94,7 @@ int main(int argc, char **argv)
 {
     test_hashmap_simple();
     test_hashmap_delete();
+    test_hashmap_noloop();
     test_hashmap_random(1<<16);
     return 0;
 }
