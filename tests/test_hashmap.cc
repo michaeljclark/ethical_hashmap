@@ -16,7 +16,7 @@ using namespace std::chrono;
 typedef std::pair<uintptr_t,uintptr_t> number_pair_t;
 
 static const number_pair_t numbers[] = {
-    { 7, 1 }, { 11, 2 }, { 15, 3 }, { 19, 4 }, { 21, 5 }, { 0, 0}
+    { 7, 1 }, { 11, 2 }, { 15, 3 }, { 19, 4 }, { 21, 5 }, { 0, 0 }
 };
 
 void test_hashmap_simple()
