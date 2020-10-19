@@ -97,10 +97,9 @@ struct hashmap
 #### _linkedhashmap_ parameters and table structure
 
 ```
-template <class Key, class Value,
+template <class Key, class Value, class _Offset = int32_t,
           class _Hash = std::hash<Key>,
-          class _Pred = std::equal_to<Key>,
-          class _Offset = int32_t>
+          class _Pred = std::equal_to<Key>>
 struct linkedhashmap
 {
     static const size_t default_size =    (2<<3);  /* 16 */
