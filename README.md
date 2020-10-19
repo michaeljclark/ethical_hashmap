@@ -58,10 +58,18 @@ and easy to understand.
 The follow table shows memory usage for the default 16 slot map
 _(table units are in bytes)_:
 
-| map            |     struct | (data+bmap) | malloc |
-|:-------------- | ----------:| -----------:| ------:|
-|`hashmap`       |         40 |     (256+4) |    260 |
-|`linkedhashmap` |         48 |     (384+4) |    388 |
+| map                        |     struct | (data+bmap) | malloc |
+|:-------------------------- | ----------:| -----------:| ------:|
+|`hashmap<u32,32>`           |         40 |     (128+4) |    132 |
+|`hashmap<u64,64>`           |         40 |     (256+4) |    260 |
+|`linkedhashmap<u32,32>`     |         48 |     (256+4) |    260 |
+|`linkedhashmap<u64,64>`     |         48 |     (384+4) |    388 |
+|`linkedhashmap<u32,32,i64>` |         56 |     (384+4) |    388 |
+|`linkedhashmap<u64,64,i64>` |         56 |     (512+4) |    516 |
+
+_linkedhashmap_ by default uses 32-bit integers for indices,
+limiting it to 2^31 entries, however, it can be instantiated
+with alternative integer types for indices.
 
 ### Data structure
 
