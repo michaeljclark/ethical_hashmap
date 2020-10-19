@@ -37,16 +37,16 @@ namespace zedland {
  */
 
 template <class Key, class Value,
-          class _Hash = std::hash<Key>,
-          class _Pred = std::equal_to<Key>>
+          class Hash = std::hash<Key>,
+          class Pred = std::equal_to<Key>>
 struct hashmap
 {
     static const size_t default_size =    (2<<3);  /* 16 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
     static const size_t load_multiplier = (2<<16); /* 1.0 */
 
-    static inline _Hash _hasher;
-    static inline _Pred _compare;
+    static inline Hash _hasher;
+    static inline Pred _compare;
 
     struct data_type {
         Key first;
@@ -56,8 +56,8 @@ struct hashmap
     typedef Key key_type;
     typedef Value mapped_type;
     typedef std::pair<Key, Value> value_type;
-    typedef _Hash hasher;
-    typedef _Pred key_equal;
+    typedef Hash hasher;
+    typedef Pred key_equal;
     typedef data_type& reference;
     typedef const data_type& const_reference;
 

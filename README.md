@@ -79,8 +79,8 @@ These extracts from the source show the array data structure.
 
 ```
 template <class Key, class Value,
-          class _Hash = std::hash<Key>,
-          class _Pred = std::equal_to<Key>>
+          class Hash = std::hash<Key>,
+          class Pred = std::equal_to<Key>>
 struct hashmap
 {
     static const size_t default_size =    (2<<3);  /* 16 */
@@ -97,9 +97,9 @@ struct hashmap
 #### _linkedhashmap_ parameters and table structure
 
 ```
-template <class Key, class Value, class _Offset = int32_t,
-          class _Hash = std::hash<Key>,
-          class _Pred = std::equal_to<Key>>
+template <class Key, class Value, class Offset = int32_t,
+          class Hash = std::hash<Key>,
+          class Pred = std::equal_to<Key>>
 struct linkedhashmap
 {
     static const size_t default_size =    (2<<3);  /* 16 */
@@ -109,8 +109,8 @@ struct linkedhashmap
     struct data_type {
         Key first;
         Value second;
-        _Offset prev;
-        _Offset next;
+        Offset prev;
+        Offset next;
     };
 }
 ```

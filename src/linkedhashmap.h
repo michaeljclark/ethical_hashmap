@@ -39,31 +39,31 @@ namespace zedland {
  * predictable iteration order based on order of insertion.
  */
 
-template <class Key, class Value, class _Offset = int32_t,
-          class _Hash = std::hash<Key>,
-          class _Pred = std::equal_to<Key>>
+template <class Key, class Value, class Offset = int32_t,
+          class Hash = std::hash<Key>,
+          class Pred = std::equal_to<Key>>
 struct linkedhashmap
 {
     static const size_t default_size =    (2<<3);  /* 16 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
     static const size_t load_multiplier = (2<<16); /* 1.0 */
 
-    static inline _Hash _hasher;
-    static inline _Pred _compare;
+    static inline Hash _hasher;
+    static inline Pred _compare;
 
     struct data_type {
         Key first;
         Value second;
-        _Offset prev;
-        _Offset next;
+        Offset prev;
+        Offset next;
     };
 
     typedef Key key_type;
     typedef Value mapped_type;
     typedef std::pair<Key, Value> value_type;
-    typedef _Hash hasher;
-    typedef _Pred key_equal;
-    typedef _Offset offset_type;
+    typedef Hash hasher;
+    typedef Pred key_equal;
+    typedef Offset offset_type;
     typedef data_type& reference;
     typedef const data_type& const_reference;
 
