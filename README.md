@@ -51,14 +51,14 @@ _(head, tail)_ indices to the structure.
 The follow table shows memory usage for the default 16 slot map
 _(table units are in bytes)_:
 
-| map                        |     struct | malloc |
-|:-------------------------- | ----------:| ------:|
-|_hashmap<u32,32>_           |         40 |    132 |
-|_hashmap<u64,64>_           |         40 |    260 |
-|_linkedhashmap<u32,32>_     |         48 |    260 |
-|_linkedhashmap<u64,64>_     |         48 |    388 |
-|_linkedhashmap<u32,32,i64>_ |         56 |    388 |
-|_linkedhashmap<u64,64,i64>_ |         56 |    516 |
+| map                         |     struct | malloc |
+|:--------------------------- | ----------:| ------:|
+|_hashmap<u32,u32>_           |         40 |    132 |
+|_hashmap<u64,u64>_           |         40 |    260 |
+|_linkedhashmap<u32,u32>_     |         48 |    260 |
+|_linkedhashmap<u64,u64>_     |         48 |    388 |
+|_linkedhashmap<u32,u32,i64>_ |         56 |    388 |
+|_linkedhashmap<u64,u64,i64>_ |         56 |    516 |
 
 The following table shows the structure size in bytes on _x86_64_:
 
