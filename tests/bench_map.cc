@@ -80,19 +80,19 @@ template <typename T>
 void print_timings(const char *name, T t1, T t2, T t3, T t4, T t5, T t6, size_t count)
 {
     char buf[128];
-    snprintf(buf, sizeof(buf), "`%s::insert`", name);
+    snprintf(buf, sizeof(buf), "_%s::insert_", name);
     printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
         duration_cast<nanoseconds>(t2-t1).count()/(float)count);
-    snprintf(buf, sizeof(buf), "`%s::clear`", name);
+    snprintf(buf, sizeof(buf), "_%s::clear_", name);
     printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
         duration_cast<nanoseconds>(t3-t2).count()/(float)count);
-    snprintf(buf, sizeof(buf), "`%s::insert`", name);
+    snprintf(buf, sizeof(buf), "_%s::insert_", name);
     printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
         duration_cast<nanoseconds>(t4-t3).count()/(float)count);
-    snprintf(buf, sizeof(buf), "`%s::lookup`", name);
+    snprintf(buf, sizeof(buf), "_%s::lookup_", name);
     printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
         duration_cast<nanoseconds>(t5-t4).count()/(float)count);
-    snprintf(buf, sizeof(buf), "`%s::erase`", name);
+    snprintf(buf, sizeof(buf), "_%s::erase_", name);
     printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
         duration_cast<nanoseconds>(t6-t5).count()/(float)count);
     printf("|%-40s|%8s|%12s|%8s|\n", "-", "-", "-", "-");
@@ -110,7 +110,7 @@ void bench_spread(const char *name, size_t count, size_t spread)
     }
     auto t2 = system_clock::now();
     char buf[128];
-    snprintf(buf, sizeof(buf), "`%s`", name);
+    snprintf(buf, sizeof(buf), "_%s_", name);
     printf("|%-40s|%8zu|%12zu|%8.1f|\n", buf, spread, count,
         duration_cast<nanoseconds>(t2-t1).count()/(float)count);
 }
@@ -135,7 +135,7 @@ void bench_spread_google(const char *name, size_t count, size_t spread)
     }
     auto t2 = system_clock::now();
     char buf[128];
-    snprintf(buf, sizeof(buf), "`%s`", name);
+    snprintf(buf, sizeof(buf), "_%s_", name);
     printf("|%-40s|%8zu|%12zu|%8.1f|\n", buf, spread, count,
         duration_cast<nanoseconds>(t2-t1).count()/(float)count);
 }

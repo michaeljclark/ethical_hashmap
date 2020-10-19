@@ -2,70 +2,74 @@
 
 High performance compact C++ hashmaps:
 
-- `hashmap`       - _open addressing hash table._
-- `linkedhashmap` - _open addressing hash table and
-                     combined bidirectional link-list._
-
-## Overview
+> ### _hashmap_
+> - Fast open addressing hash table tuned for small maps such as
+>   for histograms and other performance critical maps.
+>
+> ### _linkedhashmap_
+> - Fast open addressing hash table with bidirectional link list
+>   tuned for small maps that need predictable iteration order as
+>   well as high performance.
 
 These hashmaps are open-addressing hashtables similar to
 `google/dense_hash_map`, but they use tombstone bitmaps to
 eliminate necessity for empty or deleted key sentinels.
-
-- _hashmap_
-  - Fast open addressing hash table tuned for small maps such as
-    for histograms and other performance critical maps.
-- _linkedhashmap_
-  - Fast open addressing hash table with bidirectional link list
-    tuned for small maps that need predictable iteration order as
-    well as high performance.
 
 These containers implement most of the C++ unordered associative
 container requrements thus can be substituted for `unordered_map`
 and typical use cases including C++11 _for-loop_.
 
 There is currently no equivalent to `linkedhashmap` in the STL so it
-is perhaps somewhat of an `ordered_map` implementation.
+is perhaps somewhat of an `ordered_map` implementation, although
+_insert_ currently always appends.
 
 
 ## Design 
 
-These maps are designed for small memory foorprint. There is one
+These maps are designed for a small memory foorprint. There is one
 structure and one heap allocation which is divided between an array
-of _tuples_ composed of _(Key, Value)_ and a tombstone bitmap. _Key_
-is hashed to index into the open addressing array, and collisions are
-handled by skipping to the next available slot.
+of _tuples_ composed of _(Key, Value)_ pairs and a tombstone bitmap.
+_Key_ is hashed to index into the open addressing array, and
+collisions are handled by skipping to the next available slot.
 
 Deletions requires the use of tombstones. Sentinel key values occupy
 key-space, and make containers incompatible with associative container
 requirements, thus a 2-bit tombstone array is used. 2-bits are used
 to distinguish _available_, _occupied_, and _deleted_ states.
 
-``
+```
     enum bitmap_state {
         available = 0, occupied = 1, deleted = 2, recycled = 3
     };
-``
+```
 
 _linkedhashmap_ adds _(next, prev)_ indices to the array _tuple_,
 _(head, tail)_ indices to the structure.
-
-The source code has almost zero comments but is written to be concise
-and easy to understand.
 
 ### Memory usage
 
 The follow table shows memory usage for the default 16 slot map
 _(table units are in bytes)_:
 
-| map                        |     struct | (data+bmap) | malloc |
-|:-------------------------- | ----------:| -----------:| ------:|
-|`hashmap<u32,32>`           |         40 |     (128+4) |    132 |
-|`hashmap<u64,64>`           |         40 |     (256+4) |    260 |
-|`linkedhashmap<u32,32>`     |         48 |     (256+4) |    260 |
-|`linkedhashmap<u64,64>`     |         48 |     (384+4) |    388 |
-|`linkedhashmap<u32,32,i64>` |         56 |     (384+4) |    388 |
-|`linkedhashmap<u64,64,i64>` |         56 |     (512+4) |    516 |
+| map                        |     struct | malloc |
+|:-------------------------- | ----------:| ------:|
+|_hashmap<u32,32>_           |         40 |    132 |
+|_hashmap<u64,64>_           |         40 |    260 |
+|_linkedhashmap<u32,32>_     |         48 |    260 |
+|_linkedhashmap<u64,64>_     |         48 |    388 |
+|_linkedhashmap<u32,32,i64>_ |         56 |    388 |
+|_linkedhashmap<u64,64,i64>_ |         56 |    516 |
+
+The following table shows the structure size in bytes on _x86_64_:
+
+| map                               | size |
+|:----------------------------------| ----:|
+|_sizeof(zedland::hashmap)_         |   40 |
+|_sizeof(zedland::linkedhashmap)_   |   48 |
+|_sizeof(absl::flat_hash_map)_      |   48 |
+|_sizeof(std::unordered_map)_       |   56 |
+|_sizeof(tsl::robin_map)_           |   80 |
+|_sizeof(google::dense_hash_map)_   |   88 |
 
 _linkedhashmap_ by default uses 32-bit integers for indices,
 limiting it to 2^31 entries, however, it can be instantiated
