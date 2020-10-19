@@ -77,38 +77,28 @@ std::vector<std::pair<K,V>> get_random(size_t count)
 }
 
 template <typename T>
-void print_timings(const char *name, T t1, T t2, T t3, T t4, T t5, T t6, T t7, size_t count)
+void print_timings(const char *name, T t1, T t2, T t3, T t4, T t5, T t6, size_t count)
 {
-    char buf[64];
-    snprintf(buf, sizeof(buf), "%s::insert", name);
-    printf("|%-40s|%8s|%12zu|%8.1f|%8.3f|\n", buf, "random", count,
-        duration_cast<nanoseconds>(t2-t1).count()/(float)count,
-        duration_cast<nanoseconds>(t2-t1).count()/1e9);
-    snprintf(buf, sizeof(buf), "%s::clear", name);
-    printf("|%-40s|%8s|%12zu|%8.1f|%8.3f|\n", buf, "random", count,
-        duration_cast<nanoseconds>(t3-t2).count()/(float)count,
-        duration_cast<nanoseconds>(t3-t2).count()/1e9);
-    snprintf(buf, sizeof(buf), "%s::insert", name);
-    printf("|%-40s|%8s|%12zu|%8.1f|%8.3f|\n", buf, "random", count,
-        duration_cast<nanoseconds>(t4-t3).count()/(float)count,
-        duration_cast<nanoseconds>(t4-t3).count()/1e9);
-    snprintf(buf, sizeof(buf), "%s::erase", name);
-    printf("|%-40s|%8s|%12zu|%8.1f|%8.3f|\n", buf, "random", count,
-        duration_cast<nanoseconds>(t5-t4).count()/(float)count,
-        duration_cast<nanoseconds>(t5-t4).count()/1e9);
-    snprintf(buf, sizeof(buf), "%s::insert", name);
-    printf("|%-40s|%8s|%12zu|%8.1f|%8.3f|\n", buf, "random", count,
-        duration_cast<nanoseconds>(t6-t5).count()/(float)count,
-        duration_cast<nanoseconds>(t6-t5).count()/1e9);
-    snprintf(buf, sizeof(buf), "%s::lookup", name);
-    printf("|%-40s|%8s|%12zu|%8.1f|%8.3f|\n", buf, "random", count,
-        duration_cast<nanoseconds>(t7-t6).count()/(float)count,
-        duration_cast<nanoseconds>(t7-t6).count()/1e9);
-    printf("|%71s|%8.3f|\n", "(insert,clear,insert,erase)",
-        duration_cast<nanoseconds>(t5-t1).count()/1e9);
-    printf("|%71s|%8.3f|\n", "(insert,clear,insert,erase,insert,lookup)",
-        duration_cast<nanoseconds>(t7-t1).count()/1e9);
+    char buf[128];
+    snprintf(buf, sizeof(buf), "`%s::insert`", name);
+    printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
+        duration_cast<nanoseconds>(t2-t1).count()/(float)count);
+    snprintf(buf, sizeof(buf), "`%s::clear`", name);
+    printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
+        duration_cast<nanoseconds>(t3-t2).count()/(float)count);
+    snprintf(buf, sizeof(buf), "`%s::insert`", name);
+    printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
+        duration_cast<nanoseconds>(t4-t3).count()/(float)count);
+    snprintf(buf, sizeof(buf), "`%s::lookup`", name);
+    printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
+        duration_cast<nanoseconds>(t5-t4).count()/(float)count);
+    snprintf(buf, sizeof(buf), "`%s::erase`", name);
+    printf("|%-40s|%8s|%12zu|%8.1f|\n", buf, "random", count,
+        duration_cast<nanoseconds>(t6-t5).count()/(float)count);
+    printf("|%-40s|%8s|%12s|%8s|\n", "-", "-", "-", "-");
 }
+
+static const size_t sizes[] = { 1023, 16383, 65535, 1048575, 0 };
 
 template <typename Map>
 void bench_spread(const char *name, size_t count, size_t spread)
@@ -119,9 +109,19 @@ void bench_spread(const char *name, size_t count, size_t spread)
         map[i&spread]++;
     }
     auto t2 = system_clock::now();
-    printf("|%-40s|%8zu|%12zu|%8.1f|%8.3f|\n", name, spread, count,
-        duration_cast<nanoseconds>(t2-t1).count()/(float)count,
-        duration_cast<nanoseconds>(t2-t1).count()/1e9);
+    char buf[128];
+    snprintf(buf, sizeof(buf), "`%s`", name);
+    printf("|%-40s|%8zu|%12zu|%8.1f|\n", buf, spread, count,
+        duration_cast<nanoseconds>(t2-t1).count()/(float)count);
+}
+
+template <typename Map>
+void bench_spread(const char *name, size_t count)
+{
+    for (const size_t *s = sizes; *s != 0; s++) {
+        bench_spread<Map>(name,count,*s);
+    }
+    printf("|%-40s|%8s|%12s|%8s|\n", "-", "-", "-", "-");
 }
 
 template <typename Map>
@@ -134,9 +134,19 @@ void bench_spread_google(const char *name, size_t count, size_t spread)
         map[i&spread]++;
     }
     auto t2 = system_clock::now();
-    printf("|%-40s|%8zu|%12zu|%8.1f|%8.3f|\n", name, spread, count,
-        duration_cast<nanoseconds>(t2-t1).count()/(float)count,
-        duration_cast<nanoseconds>(t2-t1).count()/1e9);
+    char buf[128];
+    snprintf(buf, sizeof(buf), "`%s`", name);
+    printf("|%-40s|%8zu|%12zu|%8.1f|\n", buf, spread, count,
+        duration_cast<nanoseconds>(t2-t1).count()/(float)count);
+}
+
+template <typename Map>
+void bench_spread_google(const char *name, size_t count)
+{
+    for (const size_t *s = sizes; *s != 0; s++) {
+        bench_spread_google<Map>(name,count,*s);
+    }
+    printf("|%-40s|%8s|%12s|%8s|\n", "-", "-", "-", "-");
 }
 
 template <typename Map>
@@ -159,19 +169,15 @@ void bench_map(const char* name, size_t count)
     }
     auto t4 = system_clock::now();
     for (auto &ent : data) {
-        ht.erase(ent.first);
+        assert(ht.find(ent.first)->second == ent.second);
     }
     auto t5 = system_clock::now();
     for (auto &ent : data) {
-        ht.insert(ht.end(), pair_type(ent.first, ent.second));
+        ht.erase(ent.first);
     }
     auto t6 = system_clock::now();
-    for (auto &ent : data) {
-        assert(ht.find(ent.first)->second == ent.second);
-    }
-    auto t7 = system_clock::now();
 
-    print_timings(name, t1, t2, t3, t4, t5, t6, t7, count);
+    print_timings(name, t1, t2, t3, t4, t5, t6, count);
 }
 
 template <typename Map>
@@ -196,34 +202,30 @@ void bench_map_google(const char* name, size_t count)
     }
     auto t4 = system_clock::now();
     for (auto &ent : data) {
-        ht.erase(ent.first);
+        assert(ht.find(ent.first)->second == ent.second);
     }
     auto t5 = system_clock::now();
     for (auto &ent : data) {
-        ht.insert(ht.end(), pair_type(ent.first, ent.second));
+        ht.erase(ent.first);
     }
     auto t6 = system_clock::now();
-    for (auto &ent : data) {
-        assert(ht.find(ent.first)->second == ent.second);
-    }
-    auto t7 = system_clock::now();
 
-    print_timings(name, t1, t2, t3, t4, t5, t6, t7, count);
+    print_timings(name, t1, t2, t3, t4, t5, t6, count);
 }
 
 void heading()
 {
     printf("\n");
-    printf("|%-40s|%8s|%12s|%8s|%8s|\n",
-        "container", "spread", "count", "time_ns", "duration");
-    printf("|%-40s|%8s|%12s|%8s|%8s|\n",
-        ":--------------------------------------", "-----:", "----:", "------:", "------:");
+    printf("|%-40s|%8s|%12s|%8s|\n",
+        "container", "spread", "count", "time_ns");
+    printf("|%-40s|%8s|%12s|%8s|\n",
+        ":--------------------------------------",
+        "-----:", "----:", "------:");
 }
 
 int main(int argc, char **argv)
 {
     size_t count = 1000000;
-    size_t sizes[] = { 1023, 16383, 65535, 1048575, 0 };
 
     if (argc == 2) {
         count = atoi(argv[1]);
@@ -234,15 +236,13 @@ int main(int argc, char **argv)
     printf("cpu_model: %s\n", get_cpu_model().c_str());
 #endif
 
-    for (size_t *s = sizes; *s != 0; s++) {
-        heading();
-        bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",count,*s);
-        bench_spread<tsl::robin_map<size_t,size_t>>("tsl::robin_map::operator[]",count,*s);
-        bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",count,*s);
-        bench_spread<zedland::linkedhashmap<size_t,size_t>>("zedland::linkedhashmap::operator[]",count,*s);
-        bench_spread_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map::operator[]",count,*s);
-        bench_spread<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map::operator[]",count,*s);
-    }
+    heading();
+    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",count);
+    bench_spread<tsl::robin_map<size_t,size_t>>("tsl::robin_map::operator[]",count);
+    bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",count);
+    bench_spread<zedland::linkedhashmap<size_t,size_t>>("zedland::linkedhashmap::operator[]",count);
+    bench_spread_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map::operator[]",count);
+    bench_spread<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map::operator[]",count);
 
     heading();
     bench_map<std::unordered_map<size_t,size_t>>("std::unordered_map", count);
