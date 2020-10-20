@@ -20,8 +20,10 @@ container requrements thus can be substituted for `unordered_map`
 and typical use cases including C++11 _for-loop_.
 
 There is currently no equivalent to `linkedhashmap` in the STL so it
-is perhaps somewhat of an `ordered_map` implementation, although
-_insert_ currently always appends.
+is perhaps somewhat like an `ordered_map` that uses the _pos_ iterator
+hint in the first argument of _insert_ to set the position of a new
+value inserted into the linked list, while _find_ uses the hashed key
+index to locate _key value pairs_ in the hash table.
 
 
 ## Design 

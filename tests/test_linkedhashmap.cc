@@ -37,6 +37,26 @@ void test_linkedhashmap_simple()
     }
 }
 
+void test_linkedhashmap_insert()
+{
+    zedland::linkedhashmap<uintptr_t,uintptr_t> ht;
+
+    auto i1 = ht.insert({777, 1});
+    auto i2 = ht.insert(i1, {888, 2});
+    auto i3 = ht.insert(i1, {999, 3});
+
+    static const number_pair_t numbers[] = {
+        { 888, 2 }, {999, 3}, { 777, 1 }
+    };
+
+    size_t i = 0;
+    for (auto ent : ht) {
+        const number_pair_t *n = numbers + i++;
+        assert(ent.first == n->first);
+        assert(ent.second == n->second);
+    }
+}
+
 void test_linkedhashmap_delete()
 {
     zedland::linkedhashmap<uintptr_t,uintptr_t> ht;
@@ -78,6 +98,7 @@ void test_linkedhashmap_random(size_t limit)
 int main(int argc, char **argv)
 {
     test_linkedhashmap_simple();
+    test_linkedhashmap_insert();
     test_linkedhashmap_delete();
     test_linkedhashmap_random(1<<16);
     return 0;
