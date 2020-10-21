@@ -47,6 +47,73 @@ void test_hashmap_delete()
     assert(ht.find(7) == ht.end());
 }
 
+void test_hashmap_copy()
+{
+    static const number_pair_t numbers[] = {
+        { 666, 4 }, { 777, 1 }, { 888, 2 }, {999, 3}, {0, 0}
+    };
+
+    zedland::hashmap<uintptr_t,uintptr_t> hs, ht;
+    size_t count;
+
+    ht.insert({666, 4});
+    ht.insert({777, 1});
+    ht.insert({888, 2});
+    ht.insert({999, 3});
+
+    hs = ht;
+
+    count = 0;
+    for (auto ent : hs) {
+        for (const number_pair_t *n = numbers; n->first != 0; n++) {
+            if (ent.first == n->first) {
+                assert(ent.second == n->second);
+                count++;
+            }
+        }
+    }
+    assert(count == 4);
+
+    zedland::hashmap<uintptr_t,uintptr_t> hu(hs);
+
+    count = 0;
+    for (auto ent : hu) {
+        for (const number_pair_t *n = numbers; n->first != 0; n++) {
+            if (ent.first == n->first) {
+                assert(ent.second == n->second);
+                count++;
+            }
+        }
+    }
+    assert(count == 4);
+}
+
+void test_hashmap_move()
+{
+    static const number_pair_t numbers[] = {
+        { 666, 4 }, { 777, 1 }, { 888, 2 }, {999, 3}, {0, 0}
+    };
+
+    zedland::hashmap<uintptr_t,uintptr_t> ht = std::move(zedland::hashmap<uintptr_t,uintptr_t>());
+    size_t count;
+
+    ht.insert({666, 4});
+    ht.insert({777, 1});
+    ht.insert({888, 2});
+    ht.insert({999, 3});
+
+    count = 0;
+    for (auto ent : ht) {
+        for (const number_pair_t *n = numbers; n->first != 0; n++) {
+            if (ent.first == n->first) {
+                assert(ent.second == n->second);
+                count++;
+            }
+        }
+    }
+    assert(count == 4);
+}
+
 void test_hashmap_noloop()
 {
     zedland::hashmap<int, int> h(4);
@@ -96,5 +163,7 @@ int main(int argc, char **argv)
     test_hashmap_delete();
     test_hashmap_noloop();
     test_hashmap_random(1<<16);
+    test_hashmap_copy();
+    test_hashmap_move();
     return 0;
 }

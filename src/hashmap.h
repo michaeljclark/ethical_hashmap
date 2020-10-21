@@ -97,17 +97,74 @@ struct hashmap
     inline hashmap(size_t initial_size) :
         used(0), tombs(0), limit(initial_size)
     {
-        size_t data_size = sizeof(data_type) * initial_size;
-        size_t bitmap_size = initial_size >> 2;
+        size_t data_size = sizeof(data_type) * limit;
+        size_t bitmap_size = limit >> 2;
         size_t total_size = data_size + bitmap_size;
 
-        assert(is_pow2(initial_size));
+        assert(is_pow2(limit));
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
         memset(data, 0, total_size);
     }
     inline ~hashmap() { free(data); }
+
+    /*
+     * copy constructor and assignment operator
+     */
+
+    inline hashmap(const hashmap &o) :
+        used(o.used), tombs(o.tombs), limit(o.limit)
+    {
+        size_t data_size = sizeof(data_type) * limit;
+        size_t bitmap_size = limit >> 2;
+        size_t total_size = data_size + bitmap_size;
+
+        data = (data_type*)malloc(total_size);
+        bitmap = (uint64_t*)((char*)data + data_size);
+        memcpy(data, o.data, total_size);
+    }
+
+    inline hashmap(hashmap &&o) :
+        used(o.used), tombs(o.tombs), limit(o.limit),
+        data(o.data), bitmap(o.bitmap)
+    {
+        o.data = nullptr;
+        o.bitmap = nullptr;
+    }
+
+    inline hashmap& operator=(const hashmap &o)
+    {
+        free(data);
+
+        used = o.used;
+        tombs = o.tombs;
+        limit = o.limit;
+
+        size_t data_size = sizeof(data_type) * limit;
+        size_t bitmap_size = limit >> 2;
+        size_t total_size = data_size + bitmap_size;
+
+        data = (data_type*)malloc(total_size);
+        bitmap = (uint64_t*)((char*)data + data_size);
+        memcpy(data, o.data, total_size);
+
+        return *this;
+    }
+
+    inline hashmap& operator=(hashmap &&o)
+    {
+        data = o.data;
+        bitmap = o.bitmap;
+        used = o.used;
+        tombs = o.tombs;
+        limit = o.limit;
+
+        o.data = nullptr;
+        o.bitmap = nullptr;
+
+        return *this;
+    }
 
     /*
      * member functions

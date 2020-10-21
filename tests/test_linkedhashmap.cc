@@ -44,9 +44,10 @@ void test_linkedhashmap_insert()
     auto i1 = ht.insert({777, 1});
     auto i2 = ht.insert(i1, {888, 2});
     auto i3 = ht.insert(i1, {999, 3});
+    auto i4 = ht.insert(i2, {666, 4});
 
     static const number_pair_t numbers[] = {
-        { 888, 2 }, {999, 3}, { 777, 1 }
+        { 666, 4 }, { 888, 2 }, {999, 3}, { 777, 1 }
     };
 
     size_t i = 0;
@@ -55,6 +56,64 @@ void test_linkedhashmap_insert()
         assert(ent.first == n->first);
         assert(ent.second == n->second);
     }
+}
+
+void test_linkedhashmap_copy()
+{
+    static const number_pair_t numbers[] = {
+        { 666, 4 }, { 777, 1 }, { 888, 2 }, {999, 3}, {0, 0}
+    };
+
+    zedland::linkedhashmap<uintptr_t,uintptr_t> ht = std::move(zedland::linkedhashmap<uintptr_t,uintptr_t>());
+    size_t i, count;
+
+    ht.insert({666, 4});
+    ht.insert({777, 1});
+    ht.insert({888, 2});
+    ht.insert({999, 3});
+
+    count = 0;
+    for (auto ent : ht) {
+        const number_pair_t *n = numbers + count++;
+        assert(ent.first == n->first);
+        assert(ent.second == n->second);
+    }
+    assert(count == 4);
+}
+
+void test_linkedhashmap_move()
+{
+    static const number_pair_t numbers[] = {
+        { 666, 4 }, { 777, 1 }, { 888, 2 }, {999, 3}, {0, 0}
+    };
+
+    zedland::linkedhashmap<uintptr_t,uintptr_t> hs, ht;
+    size_t i, count;
+
+    ht.insert({666, 4});
+    ht.insert({777, 1});
+    ht.insert({888, 2});
+    ht.insert({999, 3});
+
+    hs = ht;
+
+    count = 0;
+    for (auto ent : hs) {
+        const number_pair_t *n = numbers + count++;
+        assert(ent.first == n->first);
+        assert(ent.second == n->second);
+    }
+    assert(count == 4);
+
+    zedland::linkedhashmap<uintptr_t,uintptr_t> hu(hs);
+
+    count = 0;
+    for (auto ent : hu) {
+        const number_pair_t *n = numbers + count++;
+        assert(ent.first == n->first);
+        assert(ent.second == n->second);
+    }
+    assert(count == 4);
 }
 
 void test_linkedhashmap_delete()
@@ -101,5 +160,7 @@ int main(int argc, char **argv)
     test_linkedhashmap_insert();
     test_linkedhashmap_delete();
     test_linkedhashmap_random(1<<16);
+    test_linkedhashmap_copy();
+    test_linkedhashmap_move();
     return 0;
 }

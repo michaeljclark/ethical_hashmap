@@ -116,6 +116,69 @@ struct linkedhashmap
     inline ~linkedhashmap() { free(data); }
 
     /*
+     * copy constructor and assignment operator
+     */
+
+    inline linkedhashmap(const linkedhashmap &o) :
+        used(o.used), tombs(o.tombs), limit(o.limit),
+        head(o.head), tail(o.tail)
+    {
+        size_t data_size = sizeof(data_type) * limit;
+        size_t bitmap_size = limit >> 2;
+        size_t total_size = data_size + bitmap_size;
+
+        data = (data_type*)malloc(total_size);
+        bitmap = (uint64_t*)((char*)data + data_size);
+        memcpy(data, o.data, total_size);
+    }
+
+    inline linkedhashmap(linkedhashmap &&o) :
+        used(o.used), tombs(o.tombs), limit(o.limit),
+        head(o.head), tail(o.tail),
+        data(o.data), bitmap(o.bitmap)
+    {
+        o.data = nullptr;
+        o.bitmap = nullptr;
+    }
+
+    inline linkedhashmap& operator=(const linkedhashmap &o)
+    {
+        free(data);
+
+        used = o.used;
+        tombs = o.tombs;
+        limit = o.limit;
+        head = o.head;
+        tail = o.tail;
+
+        size_t data_size = sizeof(data_type) * limit;
+        size_t bitmap_size = limit >> 2;
+        size_t total_size = data_size + bitmap_size;
+
+        data = (data_type*)malloc(total_size);
+        bitmap = (uint64_t*)((char*)data + data_size);
+        memcpy(data, o.data, total_size);
+
+        return *this;
+    }
+
+    inline linkedhashmap& operator=(linkedhashmap &&o)
+    {
+        data = o.data;
+        bitmap = o.bitmap;
+        used = o.used;
+        tombs = o.tombs;
+        limit = o.limit;
+        head = o.head;
+        tail = o.tail;
+
+        o.data = nullptr;
+        o.bitmap = nullptr;
+
+        return *this;
+    }
+
+    /*
      * member functions
      */
 
