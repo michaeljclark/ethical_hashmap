@@ -324,6 +324,7 @@ struct hashmap
             else if (state == deleted);            /* skip */
             else if (_compare(data[i].first, key)) {
                 bitmap_set(bitmap, i, deleted);
+                data[i].first = Key(0);
                 data[i].second = Value(0);
                 bitmap_clear(bitmap, i, occupied);
                 used--;
@@ -332,6 +333,23 @@ struct hashmap
             }
         }
     }
+
+    bool operator==(const hashmap &o) const
+    {
+        for (auto i : const_cast<hashmap&>(*this)) {
+            auto j = const_cast<hashmap&>(o).find(i.first);
+            if (j == const_cast<hashmap&>(o).end()) return false;
+            if (i.second != j->second) return false;
+        }
+        for (auto i : const_cast<hashmap&>(o)) {
+            auto j = const_cast<hashmap&>(*this).find(i.first);
+            if (j == const_cast<hashmap&>(*this).end()) return false;
+            if (i.second != j->second) return false;
+        }
+        return true;
+    }
+
+    bool operator!=(const hashmap &o) const { return !(*this == o); }
 };
 
 };

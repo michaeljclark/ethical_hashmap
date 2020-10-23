@@ -390,6 +390,7 @@ struct linkedhashmap
             else if (state == deleted);            /* skip */
             else if (_compare(data[i].first, key)) {
                 bitmap_set(bitmap, i, deleted);
+                data[i].first = Key(0);
                 data[i].second = Value(0);
                 bitmap_clear(bitmap, i, occupied);
                 erase_link_internal(i);
@@ -399,6 +400,22 @@ struct linkedhashmap
             }
         }
     }
+
+    bool operator==(const linkedhashmap &o) const
+    {
+        auto i = const_cast<linkedhashmap*>(this)->begin();
+        auto j = const_cast<linkedhashmap*>(&o)->begin();
+        while (i != const_cast<linkedhashmap*>(this)->end() || j != const_cast<linkedhashmap*>(&o)->end()) {
+            if (i == const_cast<linkedhashmap*>(this)->end() && j != const_cast<linkedhashmap*>(&o)->end()) return false;
+            if (i != const_cast<linkedhashmap*>(this)->end() && j == const_cast<linkedhashmap*>(&o)->end()) return false;
+            if (!(i->first == j->first && i->second == j->second)) return false;
+            i++;
+            j++;
+        }
+        return true;
+    }
+
+    bool operator!=(const linkedhashmap &o) const { return !(*this == o); }
 };
 
 };
