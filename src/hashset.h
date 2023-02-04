@@ -102,9 +102,18 @@ struct hashset
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        memset(data, 0, total_size);
+        memset(bitmap, 0, bitmap_size);
     }
-    inline ~hashset() { free(data); }
+
+    inline ~hashset()
+    {
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i].~data_type();
+            }
+        }
+        free(data);
+    }
 
     /*
      * copy constructor and assignment operator
@@ -119,7 +128,13 @@ struct hashset
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        memcpy(data, o.data, total_size);
+
+        memcpy(bitmap, o.bitmap, bitmap_size);
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i] = /* copy */ o.data[i];
+            }
+        }
     }
 
     inline hashset(hashset &&o) :
@@ -144,7 +159,13 @@ struct hashset
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        memcpy(data, o.data, total_size);
+
+        memcpy(bitmap, o.bitmap, bitmap_size);
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i] = /* copy */ o.data[i];
+            }
+        }
 
         return *this;
     }
@@ -216,7 +237,7 @@ struct hashset
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
         limit = new_size;
-        memset(data, 0, total_size);
+        memset(bitmap, 0, bitmap_size);
 
         size_t i = 0;
         for (data_type *v = old_data; v != old_data + old_size; v++, i++) {
@@ -224,7 +245,7 @@ struct hashset
             for (size_t j = key_index(v->first); ; j = (j+1) & index_mask()) {
                 if ((bitmap_get(bitmap, j) & occupied) != occupied) {
                     bitmap_set(bitmap, j, occupied);
-                    data[j] = *v;
+                    data[j] = /* copy */ *v;
                     break;
                 }
             }
@@ -236,10 +257,13 @@ struct hashset
 
     void clear()
     {
-        size_t data_size = sizeof(data_type) * limit;
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i].~data_type();
+            }
+        }
         size_t bitmap_size = limit >> 2;
-        size_t total_size = data_size + bitmap_size;
-        memset(data, 0, total_size);
+        memset(bitmap, 0, bitmap_size);
         used = tombs = 0;
     }
 
@@ -249,7 +273,7 @@ struct hashset
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
-                data[i].first = v;
+                data[i].first = /* copy */ v;
                 used++;
                 if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
@@ -290,7 +314,7 @@ struct hashset
             else if (state == deleted);            /* skip */
             else if (_compare(data[i].first, key)) {
                 bitmap_set(bitmap, i, deleted);
-                data[i].first = Key(0);
+                data[i].~data_type();
                 bitmap_clear(bitmap, i, occupied);
                 used--;
                 tombs++;

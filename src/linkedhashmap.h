@@ -111,9 +111,18 @@ struct linkedhashmap
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        memset(data, 0, total_size);
+        memset(bitmap, 0, bitmap_size);
     }
-    inline ~linkedhashmap() { free(data); }
+
+    inline ~linkedhashmap()
+    {
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i].~data_type();
+            }
+        }
+        free(data);
+    }
 
     /*
      * copy constructor and assignment operator
@@ -129,7 +138,13 @@ struct linkedhashmap
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        memcpy(data, o.data, total_size);
+
+        memcpy(bitmap, o.bitmap, bitmap_size);
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i] = /* copy */ o.data[i];
+            }
+        }
     }
 
     inline linkedhashmap(linkedhashmap &&o) :
@@ -157,7 +172,13 @@ struct linkedhashmap
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        memcpy(data, o.data, total_size);
+
+        memcpy(bitmap, o.bitmap, bitmap_size);
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i] = /* copy */ o.data[i];
+            }
+        }
 
         return *this;
     }
@@ -231,7 +252,7 @@ struct linkedhashmap
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
         limit = new_size;
-        memset(data, 0, total_size);
+        memset(bitmap, 0, bitmap_size);
 
         offset_type k = empty_offset;
         for (size_t i = head; i != empty_offset; i = old_data[i].next) {
@@ -241,8 +262,8 @@ struct linkedhashmap
                     bitmap_set(bitmap, j, occupied);
                     if (i == head) head = j;
                     if (i == tail) tail = j;
-                    data[j].first = v->first;
-                    data[j].second = v->second;
+                    data[j].first = /* copy */ v->first;
+                    data[j].second = /* copy */ v->second;
                     data[j].next = empty_offset;
                     if (k == empty_offset) {
                         data[j].prev = empty_offset;
@@ -302,10 +323,13 @@ struct linkedhashmap
 
     void clear()
     {
-        size_t data_size = sizeof(data_type) * limit;
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i].~data_type();
+            }
+        }
         size_t bitmap_size = limit >> 2;
-        size_t total_size = data_size + bitmap_size;
-        memset(data, 0, total_size);
+        memset(bitmap, 0, bitmap_size);
         head = tail = empty_offset;
         used = tombs = 0;
     }
@@ -319,7 +343,7 @@ struct linkedhashmap
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
-                data[i] = data_type{v.first, v.second};
+                data[i] = /* copy */ data_type{v.first, v.second};
                 insert_link_internal(h.i, i);
                 used++;
                 if ((state & deleted) == deleted) tombs--;
@@ -390,8 +414,7 @@ struct linkedhashmap
             else if (state == deleted);            /* skip */
             else if (_compare(data[i].first, key)) {
                 bitmap_set(bitmap, i, deleted);
-                data[i].first = Key(0);
-                data[i].second = Value(0);
+                data[i].~data_type();
                 bitmap_clear(bitmap, i, occupied);
                 erase_link_internal(i);
                 used--;

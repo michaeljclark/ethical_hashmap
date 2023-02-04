@@ -105,9 +105,18 @@ struct hashmap
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        memset(data, 0, total_size);
+        memset(bitmap, 0, bitmap_size);
     }
-    inline ~hashmap() { free(data); }
+
+    inline ~hashmap()
+    {
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i].~data_type();
+            }
+        }
+        free(data);
+    }
 
     /*
      * copy constructor and assignment operator
@@ -122,7 +131,13 @@ struct hashmap
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        memcpy(data, o.data, total_size);
+
+        memcpy(bitmap, o.bitmap, bitmap_size);
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i] = /* copy */ o.data[i];
+            }
+        }
     }
 
     inline hashmap(hashmap &&o) :
@@ -147,7 +162,13 @@ struct hashmap
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        memcpy(data, o.data, total_size);
+
+        memcpy(bitmap, o.bitmap, bitmap_size);
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i] = /* copy */ o.data[i];
+            }
+        }
 
         return *this;
     }
@@ -219,7 +240,7 @@ struct hashmap
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
         limit = new_size;
-        memset(data, 0, total_size);
+        memset(bitmap, 0, bitmap_size);
 
         size_t i = 0;
         for (data_type *v = old_data; v != old_data + old_size; v++, i++) {
@@ -227,7 +248,7 @@ struct hashmap
             for (size_t j = key_index(v->first); ; j = (j+1) & index_mask()) {
                 if ((bitmap_get(bitmap, j) & occupied) != occupied) {
                     bitmap_set(bitmap, j, occupied);
-                    data[j] = *v;
+                    data[j] = /* copy */ *v;
                     break;
                 }
             }
@@ -239,10 +260,13 @@ struct hashmap
 
     void clear()
     {
-        size_t data_size = sizeof(data_type) * limit;
+        for (size_t i = 0; i < limit; i++) {
+            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                data[i].~data_type();
+            }
+        }
         size_t bitmap_size = limit >> 2;
-        size_t total_size = data_size + bitmap_size;
-        memset(data, 0, total_size);
+        memset(bitmap, 0, bitmap_size);
         used = tombs = 0;
     }
 
@@ -255,7 +279,7 @@ struct hashmap
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
-                data[i] = data_type{v.first, v.second};
+                data[i] = /* copy */ data_type{v.first, v.second};
                 used++;
                 if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
@@ -272,7 +296,7 @@ struct hashmap
                     return iterator{this, i};
                 }
             } else if (_compare(data[i].first, v.first)) {
-                data[i].second = v.second;
+                data[i].second = /* copy */ v.second;
                 return iterator{this, i};
             }
         }
@@ -284,7 +308,7 @@ struct hashmap
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
-                data[i].first = key;
+                data[i].first = /* copy */ key;
                 used++;
                 if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
@@ -324,8 +348,7 @@ struct hashmap
             else if (state == deleted);            /* skip */
             else if (_compare(data[i].first, key)) {
                 bitmap_set(bitmap, i, deleted);
-                data[i].first = Key(0);
-                data[i].second = Value(0);
+                data[i].~data_type();
                 bitmap_clear(bitmap, i, occupied);
                 used--;
                 tombs++;
