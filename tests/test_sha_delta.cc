@@ -10,10 +10,10 @@
 
 #include "bytes.h"
 #include "sha256.h"
-#include "linkedhashmap.h"
+#include "linked_hash_map.h"
 
 
-using zedland::linkedhashmap;
+using zedland::linked_hash_map;
 
 static char* hex_string(char *buf, size_t buf_len, const uint8_t *in, size_t len)
 {
@@ -35,7 +35,7 @@ template <typename H> static char* map_string(char *buf, size_t buf_len, H &map)
 }
 
 typedef std::array<uint8_t,32> key256;
-typedef linkedhashmap<int,int> pmap;
+typedef linked_hash_map<int,int> pmap;
 
 struct hash_key256 {
     size_t operator()(const key256 &b) {
@@ -63,7 +63,7 @@ pmap make_map(std::initializer_list<std::pair<int,int>> l)
     return std::move(m);
 }
 
-typedef linkedhashmap<key256,pmap,int32_t,hash_key256> sha256_pmap_base;
+typedef linked_hash_map<key256,pmap,int32_t,hash_key256> sha256_pmap_base;
 
 struct sha256_pmap : sha256_pmap_base
 {

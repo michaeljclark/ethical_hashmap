@@ -9,7 +9,7 @@
 #include <chrono>
 #include <utility>
 
-#include "hashmap.h"
+#include "hash_map.h"
 
 using namespace std::chrono;
 
@@ -19,9 +19,9 @@ static const number_pair_t numbers[] = {
     { 7, 1 }, { 11, 2 }, { 15, 3 }, { 19, 4 }, { 21, 5 }, { 0, 0 }
 };
 
-void test_hashmap_simple()
+void test_hash_map_simple()
 {
-    zedland::hashmap<uintptr_t,uintptr_t> ht;
+    zedland::hash_map<uintptr_t,uintptr_t> ht;
 
     for (const number_pair_t *n = numbers; n->first != 0; n++) {
         ht.insert(n->first, n->second);
@@ -38,22 +38,22 @@ void test_hashmap_simple()
     }
 }
 
-void test_hashmap_delete()
+void test_hash_map_delete()
 {
-    zedland::hashmap<uintptr_t,uintptr_t> ht;
+    zedland::hash_map<uintptr_t,uintptr_t> ht;
     ht.insert(7, 8);
     assert(ht.find(7)->second == 8);
     ht.erase(7);
     assert(ht.find(7) == ht.end());
 }
 
-void test_hashmap_copy()
+void test_hash_map_copy()
 {
     static const number_pair_t numbers[] = {
         { 666, 4 }, { 777, 1 }, { 888, 2 }, {999, 3}, {0, 0}
     };
 
-    zedland::hashmap<uintptr_t,uintptr_t> hs, ht;
+    zedland::hash_map<uintptr_t,uintptr_t> hs, ht;
     size_t count;
 
     ht.insert({666, 4});
@@ -74,7 +74,7 @@ void test_hashmap_copy()
     }
     assert(count == 4);
 
-    zedland::hashmap<uintptr_t,uintptr_t> hu(hs);
+    zedland::hash_map<uintptr_t,uintptr_t> hu(hs);
 
     count = 0;
     for (auto ent : hu) {
@@ -88,13 +88,13 @@ void test_hashmap_copy()
     assert(count == 4);
 }
 
-void test_hashmap_move()
+void test_hash_map_move()
 {
     static const number_pair_t numbers[] = {
         { 666, 4 }, { 777, 1 }, { 888, 2 }, {999, 3}, {0, 0}
     };
 
-    zedland::hashmap<uintptr_t,uintptr_t> ht = std::move(zedland::hashmap<uintptr_t,uintptr_t>());
+    zedland::hash_map<uintptr_t,uintptr_t> ht = std::move(zedland::hash_map<uintptr_t,uintptr_t>());
     size_t count;
 
     ht.insert({666, 4});
@@ -114,9 +114,9 @@ void test_hashmap_move()
     assert(count == 4);
 }
 
-void test_hashmap_noloop()
+void test_hash_map_noloop()
 {
-    zedland::hashmap<int, int> h(4);
+    zedland::hash_map<int, int> h(4);
 
     // Fill the table with tombstones.
     for (size_t i = 0; i < 4; i++) {
@@ -142,9 +142,9 @@ void insert_random(size_t limit, F fn)
     }
 }
 
-void test_hashmap_random(size_t limit)
+void test_hash_map_random(size_t limit)
 {
-    zedland::hashmap<uintptr_t,uintptr_t> ht;
+    zedland::hash_map<uintptr_t,uintptr_t> ht;
     std::map<uintptr_t,uintptr_t> hm;
 
     insert_random(limit, [&](size_t key, size_t val) {
@@ -159,11 +159,11 @@ void test_hashmap_random(size_t limit)
 
 int main(int argc, char **argv)
 {
-    test_hashmap_simple();
-    test_hashmap_delete();
-    test_hashmap_noloop();
-    test_hashmap_random(1<<16);
-    test_hashmap_copy();
-    test_hashmap_move();
+    test_hash_map_simple();
+    test_hash_map_delete();
+    test_hash_map_noloop();
+    test_hash_map_random(1<<16);
+    test_hash_map_copy();
+    test_hash_map_move();
     return 0;
 }

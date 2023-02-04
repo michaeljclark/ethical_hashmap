@@ -9,14 +9,14 @@
 #include <initializer_list>
 
 #include "sha256.h"
-#include "linkedhashmap.h"
-#include "linkedhashset.h"
+#include "hash_map.h"
+#include "hash_set.h"
 
-struct hash_linkedhashmap
+struct hash_hash_map
 {
-    typedef zedland::linkedhashmap<int,int> hashmap_t;
+    typedef zedland::hash_map<int,int> hash_map_t;
 
-    size_t operator()(hashmap_t &m)
+    size_t operator()(hash_map_t &m)
     {
         uint8_t b[32];
         sha256_ctx ctx;
@@ -30,11 +30,11 @@ struct hash_linkedhashmap
     }
 };
 
-void test_linkedhashset_simple()
+void test_hash_set_simple()
 {
     static const uintptr_t numbers[] = { 8, 9, 6, 7, 4, 5, 2, 3, 0 };
 
-    zedland::linkedhashset<uintptr_t> ht;
+    zedland::hash_set<uintptr_t> ht;
 
     for (const uintptr_t *n = numbers; *n != 0; n++) {
         ht.insert(*n);
@@ -43,27 +43,27 @@ void test_linkedhashset_simple()
         assert(ht.find(*n)->first == *n);
     }
     const uintptr_t *n = numbers;
-    for (auto &ent : ht) {
-        assert(ent.first == *n++);
+    for (uintptr_t n : numbers) {
+        if (n > 0) assert(ht.find(n) != ht.end());
     }
 }
 
-zedland::linkedhashmap<int,int>
+zedland::hash_map<int,int>
 make_map(std::initializer_list<std::pair<int,int>> l)
 {
-    zedland::linkedhashmap<int,int> m;
+    zedland::hash_map<int,int> m;
     for (auto i = l.begin(); i != l.end(); i++) {
         m.insert(i->first, i->second);
     }
     return std::move(m);
 }
 
-typedef zedland::linkedhashmap<int,int> hashmap_t;
-typedef zedland::linkedhashset<hashmap_t,int32_t,hash_linkedhashmap> hashset_t;
+typedef zedland::hash_map<int,int> hash_map_t;
+typedef zedland::hash_set<hash_map_t,hash_hash_map> hash_set_t;
 
-void test_linkedhashset_hashmap()
+void test_hash_set_hash_map()
 {
-    hashset_t s;
+    hash_set_t s;
     s.insert(make_map({{1,2},{3,4},{5,6}}));
     s.insert(make_map({{1,2},{3,4},{5,6},{7,8}}));
     s.insert(make_map({{1,2},{3,4},{5,6},{7,8},{9,10}}));
@@ -79,7 +79,7 @@ void test_linkedhashset_hashmap()
 
 int main(int argc, char **argv)
 {
-    test_linkedhashset_simple();
-    test_linkedhashset_hashmap();
+    test_hash_set_simple();
+    test_hash_set_hash_map();
     return 0;
 }

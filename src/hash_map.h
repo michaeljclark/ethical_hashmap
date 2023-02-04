@@ -1,5 +1,5 @@
 /*
- * Fast open addressing linked hash table with tombstone bit map.
+ * Fast open addressing hash table with tombstone bit map.
  *
  * Copyright (c) 2020 Michael Clark <michaeljclark@mac.com>
  *
@@ -30,19 +30,16 @@
 namespace zedland {
 
 /*
- * This open addressing linkedhashmap uses a 2-bit entry per slot bitmap
+ * This open addressing hash_map uses a 2-bit entry per slot bitmap
  * that eliminates the need for empty and deleted key sentinels.
- * The hashmap has a simple array of key and value pairs and the
+ * The hash_map has a simple array of key and value pairs and the
  * tombstone bitmap, which are allocated in a single call to malloc.
- *
- * The linkedhashmap entries contains a bidirectional linked list for
- * predictable iteration order based on order of insertion.
  */
 
-template <class Key, class Value, class Offset = int32_t,
+template <class Key, class Value,
           class Hash = std::hash<Key>,
           class Pred = std::equal_to<Key>>
-struct linkedhashmap
+struct hash_map
 {
     static const size_t default_size =    (2<<3);  /* 16 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
@@ -54,8 +51,6 @@ struct linkedhashmap
     struct data_type {
         Key first;
         Value second;
-        Offset prev;
-        Offset next;
     };
 
     typedef Key key_type;
@@ -63,17 +58,12 @@ struct linkedhashmap
     typedef std::pair<Key, Value> value_type;
     typedef Hash hasher;
     typedef Pred key_equal;
-    typedef Offset offset_type;
     typedef data_type& reference;
     typedef const data_type& const_reference;
-
-    enum : offset_type { empty_offset = offset_type(-1) };
 
     size_t used;
     size_t tombs;
     size_t limit;
-    offset_type head;
-    offset_type tail;
     data_type *data;
     uint64_t *bitmap;
 
@@ -83,13 +73,18 @@ struct linkedhashmap
 
     struct iterator
     {
-        linkedhashmap *h;
+        hash_map *h;
         size_t i;
 
-        iterator& operator++() { i = h->data[i].next; return *this; }
+        size_t step(size_t i) {
+            while (i < h->limit &&
+                   (bitmap_get(h->bitmap, i) & occupied) != occupied) i++;
+            return i;
+        }
+        iterator& operator++() { i = step(i+1); return *this; }
         iterator operator++(int) { iterator r = *this; ++(*this); return r; }
-        data_type& operator*() { return h->data[i]; }
-        data_type* operator->() { return &h->data[i]; }
+        data_type& operator*() { i = step(i); return h->data[i]; }
+        data_type* operator->() { i = step(i); return &h->data[i]; }
         bool operator==(const iterator &o) const { return h == o.h && i == o.i; }
         bool operator!=(const iterator &o) const { return h != o.h || i != o.i; }
     };
@@ -98,23 +93,22 @@ struct linkedhashmap
      * constructors and destructor
      */
 
-    inline linkedhashmap() : linkedhashmap(default_size) {}
-    inline linkedhashmap(size_t initial_size) :
-        used(0), tombs(0), limit(initial_size),
-        head(empty_offset), tail(empty_offset)
+    inline hash_map() : hash_map(default_size) {}
+    inline hash_map(size_t initial_size) :
+        used(0), tombs(0), limit(initial_size)
     {
-        size_t data_size = sizeof(data_type) * initial_size;
-        size_t bitmap_size = initial_size >> 2;
+        size_t data_size = sizeof(data_type) * limit;
+        size_t bitmap_size = limit >> 2;
         size_t total_size = data_size + bitmap_size;
 
-        assert(is_pow2(initial_size));
+        assert(is_pow2(limit));
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
         memset(bitmap, 0, bitmap_size);
     }
 
-    inline ~linkedhashmap()
+    inline ~hash_map()
     {
         for (size_t i = 0; i < limit; i++) {
             if ((bitmap_get(bitmap, i) & occupied) == occupied) {
@@ -128,9 +122,8 @@ struct linkedhashmap
      * copy constructor and assignment operator
      */
 
-    inline linkedhashmap(const linkedhashmap &o) :
-        used(o.used), tombs(o.tombs), limit(o.limit),
-        head(o.head), tail(o.tail)
+    inline hash_map(const hash_map &o) :
+        used(o.used), tombs(o.tombs), limit(o.limit)
     {
         size_t data_size = sizeof(data_type) * limit;
         size_t bitmap_size = limit >> 2;
@@ -147,24 +140,21 @@ struct linkedhashmap
         }
     }
 
-    inline linkedhashmap(linkedhashmap &&o) :
+    inline hash_map(hash_map &&o) :
         used(o.used), tombs(o.tombs), limit(o.limit),
-        head(o.head), tail(o.tail),
         data(o.data), bitmap(o.bitmap)
     {
         o.data = nullptr;
         o.bitmap = nullptr;
     }
 
-    inline linkedhashmap& operator=(const linkedhashmap &o)
+    inline hash_map& operator=(const hash_map &o)
     {
         free(data);
 
         used = o.used;
         tombs = o.tombs;
         limit = o.limit;
-        head = o.head;
-        tail = o.tail;
 
         size_t data_size = sizeof(data_type) * limit;
         size_t bitmap_size = limit >> 2;
@@ -183,15 +173,13 @@ struct linkedhashmap
         return *this;
     }
 
-    inline linkedhashmap& operator=(linkedhashmap &&o)
+    inline hash_map& operator=(hash_map &&o)
     {
         data = o.data;
         bitmap = o.bitmap;
         used = o.used;
         tombs = o.tombs;
         limit = o.limit;
-        head = o.head;
-        tail = o.tail;
 
         o.data = nullptr;
         o.bitmap = nullptr;
@@ -210,8 +198,8 @@ struct linkedhashmap
     inline size_t hash_index(uint64_t h) { return h & index_mask(); }
     inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
     inline hasher hash_function() const { return _hasher; }
-    inline iterator begin() { return iterator{ this, size_t(head) }; }
-    inline iterator end() { return iterator{ this, size_t(empty_offset) }; }
+    inline iterator begin() { return iterator{ this, 0 }; }
+    inline iterator end() { return iterator{ this, limit }; }
 
     /*
      * bit manipulation helpers
@@ -254,24 +242,13 @@ struct linkedhashmap
         limit = new_size;
         memset(bitmap, 0, bitmap_size);
 
-        offset_type k = empty_offset;
-        for (size_t i = head; i != empty_offset; i = old_data[i].next) {
-            data_type *v = old_data + i;
+        size_t i = 0;
+        for (data_type *v = old_data; v != old_data + old_size; v++, i++) {
+            if ((bitmap_get(old_bitmap, i) & occupied) != occupied) continue;
             for (size_t j = key_index(v->first); ; j = (j+1) & index_mask()) {
                 if ((bitmap_get(bitmap, j) & occupied) != occupied) {
                     bitmap_set(bitmap, j, occupied);
-                    if (i == head) head = j;
-                    if (i == tail) tail = j;
-                    data[j].first = /* copy */ v->first;
-                    data[j].second = /* copy */ v->second;
-                    data[j].next = empty_offset;
-                    if (k == empty_offset) {
-                        data[j].prev = empty_offset;
-                    } else {
-                        data[j].prev = k;
-                        data[k].next = j;
-                    }
-                    k = j;
+                    data[j] = /* copy */ *v;
                     break;
                 }
             }
@@ -279,46 +256,6 @@ struct linkedhashmap
 
         tombs = 0;
         free(old_data);
-    }
-
-    /* inserts indice link before specified position */
-    void insert_link_internal(size_t pos, size_t i)
-    {
-        if (head == tail && head == empty_offset) {
-            head = tail = i;
-            data[i].next = data[i].prev = empty_offset;
-        } else if (pos == empty_offset) {
-            data[i].next = empty_offset;
-            data[i].prev = tail;
-            data[tail].next = i;
-            tail = i;
-        } else {
-            data[i].next = pos;
-            data[i].prev = data[pos].prev;
-            if (data[pos].prev != empty_offset) {
-                data[data[pos].prev].next = i;
-            }
-            data[pos].prev = i;
-            if (head == pos) head = i;
-        }
-    }
-
-    /* remove indice link at the specified index */
-    void erase_link_internal(size_t i)
-    {
-        assert(head != empty_offset && tail != empty_offset);
-        if (head == tail && i == head) {
-            head = tail = empty_offset;
-        } else {
-            if (head == i) head = data[i].next;
-            if (tail == i) tail = data[i].prev;
-            if (data[i].prev != empty_offset) {
-                data[data[i].prev].next = data[i].next;
-            }
-            if (data[i].next != empty_offset) {
-                data[data[i].next].prev = data[i].prev;
-            }
-        }
     }
 
     void clear()
@@ -330,21 +267,19 @@ struct linkedhashmap
         }
         size_t bitmap_size = limit >> 2;
         memset(bitmap, 0, bitmap_size);
-        head = tail = empty_offset;
         used = tombs = 0;
     }
 
-    iterator insert(const value_type& val) { return insert(end(), val); }
-    iterator insert(Key key, Value val) { return insert(end(), value_type(key, val)); }
+    iterator insert(iterator i, const value_type& val) { return insert(val); }
+    iterator insert(Key key, Value val) { return insert(value_type(key, val)); }
 
-    iterator insert(iterator h, const value_type& v)
+    iterator insert(const value_type& v)
     {
         for (size_t i = key_index(v.first); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
                 data[i] = /* copy */ data_type{v.first, v.second};
-                insert_link_internal(h.i, i);
                 used++;
                 if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
@@ -361,7 +296,7 @@ struct linkedhashmap
                     return iterator{this, i};
                 }
             } else if (_compare(data[i].first, v.first)) {
-                data[i].second = v.second;
+                data[i].second = /* copy */ v.second;
                 return iterator{this, i};
             }
         }
@@ -373,13 +308,12 @@ struct linkedhashmap
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
-                data[i].first = key;
-                insert_link_internal(empty_offset, i);
+                data[i].first = /* copy */ key;
                 used++;
                 if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
                     resize_internal(data, bitmap, limit, limit << 1);
-                    for (i = key_index(key); ; i = (i+1) & index_mask()) {
+                    for (i = key_index(key);; i = (i+1) & index_mask()) {
                         bitmap_state state = bitmap_get(bitmap, i);
                              if (state == available) abort();
                         else if (state == deleted); /* skip */
@@ -416,7 +350,6 @@ struct linkedhashmap
                 bitmap_set(bitmap, i, deleted);
                 data[i].~data_type();
                 bitmap_clear(bitmap, i, occupied);
-                erase_link_internal(i);
                 used--;
                 tombs++;
                 return;
@@ -424,21 +357,22 @@ struct linkedhashmap
         }
     }
 
-    bool operator==(const linkedhashmap &o) const
+    bool operator==(const hash_map &o) const
     {
-        auto i = const_cast<linkedhashmap*>(this)->begin();
-        auto j = const_cast<linkedhashmap*>(&o)->begin();
-        while (i != const_cast<linkedhashmap*>(this)->end() || j != const_cast<linkedhashmap*>(&o)->end()) {
-            if (i == const_cast<linkedhashmap*>(this)->end() && j != const_cast<linkedhashmap*>(&o)->end()) return false;
-            if (i != const_cast<linkedhashmap*>(this)->end() && j == const_cast<linkedhashmap*>(&o)->end()) return false;
-            if (!(i->first == j->first && i->second == j->second)) return false;
-            i++;
-            j++;
+        for (auto i : const_cast<hash_map&>(*this)) {
+            auto j = const_cast<hash_map&>(o).find(i.first);
+            if (j == const_cast<hash_map&>(o).end()) return false;
+            if (i.second != j->second) return false;
+        }
+        for (auto i : const_cast<hash_map&>(o)) {
+            auto j = const_cast<hash_map&>(*this).find(i.first);
+            if (j == const_cast<hash_map&>(*this).end()) return false;
+            if (i.second != j->second) return false;
         }
         return true;
     }
 
-    bool operator!=(const linkedhashmap &o) const { return !(*this == o); }
+    bool operator!=(const hash_map &o) const { return !(*this == o); }
 };
 
 };

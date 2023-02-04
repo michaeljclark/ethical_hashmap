@@ -30,16 +30,16 @@
 namespace zedland {
 
 /*
- * This open addressing hashmap uses a 2-bit entry per slot bitmap
+ * This open addressing hash_set uses a 2-bit entry per slot bitmap
  * that eliminates the need for empty and deleted key sentinels.
- * The hashmap has a simple array of key and value pairs and the
+ * The hash_set has a simple array of key and value pairs and the
  * tombstone bitmap, which are allocated in a single call to malloc.
  */
 
-template <class Key, class Value,
+template <class Key,
           class Hash = std::hash<Key>,
           class Pred = std::equal_to<Key>>
-struct hashmap
+struct hash_set
 {
     static const size_t default_size =    (2<<3);  /* 16 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
@@ -50,12 +50,9 @@ struct hashmap
 
     struct data_type {
         Key first;
-        Value second;
     };
 
-    typedef Key key_type;
-    typedef Value mapped_type;
-    typedef std::pair<Key, Value> value_type;
+    typedef Key value_type;
     typedef Hash hasher;
     typedef Pred key_equal;
     typedef data_type& reference;
@@ -73,7 +70,7 @@ struct hashmap
 
     struct iterator
     {
-        hashmap *h;
+        hash_set *h;
         size_t i;
 
         size_t step(size_t i) {
@@ -93,8 +90,8 @@ struct hashmap
      * constructors and destructor
      */
 
-    inline hashmap() : hashmap(default_size) {}
-    inline hashmap(size_t initial_size) :
+    inline hash_set() : hash_set(default_size) {}
+    inline hash_set(size_t initial_size) :
         used(0), tombs(0), limit(initial_size)
     {
         size_t data_size = sizeof(data_type) * limit;
@@ -108,7 +105,7 @@ struct hashmap
         memset(bitmap, 0, bitmap_size);
     }
 
-    inline ~hashmap()
+    inline ~hash_set()
     {
         for (size_t i = 0; i < limit; i++) {
             if ((bitmap_get(bitmap, i) & occupied) == occupied) {
@@ -122,7 +119,7 @@ struct hashmap
      * copy constructor and assignment operator
      */
 
-    inline hashmap(const hashmap &o) :
+    inline hash_set(const hash_set &o) :
         used(o.used), tombs(o.tombs), limit(o.limit)
     {
         size_t data_size = sizeof(data_type) * limit;
@@ -140,7 +137,7 @@ struct hashmap
         }
     }
 
-    inline hashmap(hashmap &&o) :
+    inline hash_set(hash_set &&o) :
         used(o.used), tombs(o.tombs), limit(o.limit),
         data(o.data), bitmap(o.bitmap)
     {
@@ -148,7 +145,7 @@ struct hashmap
         o.bitmap = nullptr;
     }
 
-    inline hashmap& operator=(const hashmap &o)
+    inline hash_set& operator=(const hash_set &o)
     {
         free(data);
 
@@ -173,7 +170,7 @@ struct hashmap
         return *this;
     }
 
-    inline hashmap& operator=(hashmap &&o)
+    inline hash_set& operator=(hash_set &&o)
     {
         data = o.data;
         bitmap = o.bitmap;
@@ -270,61 +267,30 @@ struct hashmap
         used = tombs = 0;
     }
 
-    iterator insert(iterator i, const value_type& val) { return insert(val); }
-    iterator insert(Key key, Value val) { return insert(value_type(key, val)); }
-
     iterator insert(const value_type& v)
     {
-        for (size_t i = key_index(v.first); ; i = (i+1) & index_mask()) {
+        for (size_t i = key_index(v); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
-                data[i] = /* copy */ data_type{v.first, v.second};
+                data[i].first = /* copy */ v;
                 used++;
                 if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
                     resize_internal(data, bitmap, limit, limit << 1);
-                    for (i = key_index(v.first); ; i = (i+1) & index_mask()) {
+                    for (i = key_index(v); ; i = (i+1) & index_mask()) {
                         bitmap_state state = bitmap_get(bitmap, i);
                              if (state == available) abort();
                         else if (state == deleted); /* skip */
-                        else if (_compare(data[i].first, v.first)) {
+                        else if (_compare(data[i].first, v)) {
                             return iterator{this, i};
                         }
                     }
                 } else {
                     return iterator{this, i};
                 }
-            } else if (_compare(data[i].first, v.first)) {
-                data[i].second = /* copy */ v.second;
+            } else if (_compare(data[i].first, v)) {
                 return iterator{this, i};
-            }
-        }
-    }
-
-    Value& operator[](const Key &key)
-    {
-        for (size_t i = key_index(key); ; i = (i+1) & index_mask()) {
-            bitmap_state state = bitmap_get(bitmap, i);
-            if ((state & occupied) != occupied) {
-                bitmap_set(bitmap, i, occupied);
-                data[i].first = /* copy */ key;
-                used++;
-                if ((state & deleted) == deleted) tombs--;
-                if (load() > load_factor) {
-                    resize_internal(data, bitmap, limit, limit << 1);
-                    for (i = key_index(key);; i = (i+1) & index_mask()) {
-                        bitmap_state state = bitmap_get(bitmap, i);
-                             if (state == available) abort();
-                        else if (state == deleted); /* skip */
-                        else if (_compare(data[i].first, key)) {
-                            return data[i].second;
-                        }
-                    }
-                }
-                return data[i].second;
-            } else if (_compare(data[i].first, key)) {
-                return data[i].second;
             }
         }
     }
@@ -356,23 +322,6 @@ struct hashmap
             }
         }
     }
-
-    bool operator==(const hashmap &o) const
-    {
-        for (auto i : const_cast<hashmap&>(*this)) {
-            auto j = const_cast<hashmap&>(o).find(i.first);
-            if (j == const_cast<hashmap&>(o).end()) return false;
-            if (i.second != j->second) return false;
-        }
-        for (auto i : const_cast<hashmap&>(o)) {
-            auto j = const_cast<hashmap&>(*this).find(i.first);
-            if (j == const_cast<hashmap&>(*this).end()) return false;
-            if (i.second != j->second) return false;
-        }
-        return true;
-    }
-
-    bool operator!=(const hashmap &o) const { return !(*this == o); }
 };
 
 };

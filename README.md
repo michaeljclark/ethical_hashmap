@@ -1,25 +1,30 @@
-# zhashmap
+# hashtable
 
-High performance compact C++ hashmaps:
+High performance and compact C++ hash sets and maps:
 
-> ### _hashmap_
-> - Fast open addressing hash table tuned for small maps such as
->   for histograms and other performance critical maps.
+> ### _hash_set_
+> - Fast open addressing hash set tuned for small sets.
 >
-> ### _linkedhashmap_
-> - Fast open addressing hash table with bidirectional link list
->   tuned for small maps that need predictable iteration order as
->   well as high performance.
+> ### _hash_map_
+> - Fast open addressing hash map tuned for small maps.
+>
+> ### _linked_hash_set_
+> - Fast open addressing hash set with link list tuned
+>   for small maps with predictable iteration order.
+>
+> ### _linked_hash_map_
+> - Fast open addressing hash map with link list tuned
+>   for small maps with predictable iteration order.
 
-These hashmaps are open-addressing hashtables similar to
-`google/dense_hash_map`, but they use tombstone bitmaps to
-eliminate necessity for empty or deleted key sentinels.
+These hash sets and maps are open-addressing hashtables similar
+to `google/dense_hash_map`, but they use tombstone bitmaps to
+eliminate the necessity for empty or deleted key sentinels.
 
 These containers implement most of the C++ unordered associative
 container requrements thus can be substituted for `unordered_map`
 and typical use cases including C++11 _for-loop_.
 
-There is currently no equivalent to `linkedhashmap` in the STL so it
+There is currently no equivalent to `linked_hash_map` in the STL so it
 is perhaps somewhat like an `ordered_map` that uses the _pos_ iterator
 hint in the first argument of _insert_ to set the position of a new
 value inserted into the linked list, while _find_ uses the hashed key
@@ -45,7 +50,7 @@ to distinguish _available_, _occupied_, and _deleted_ states.
     };
 ```
 
-_linkedhashmap_ adds _(next, prev)_ indices to the array _tuple_,
+_linked_hash_map_ adds _(next, prev)_ indices to the array _tuple_,
 _(head, tail)_ indices to the structure.
 
 ### Memory usage
@@ -53,27 +58,27 @@ _(head, tail)_ indices to the structure.
 The follow table shows memory usage for the default 16 slot map
 _(table units are in bytes)_:
 
-| map                         |     struct | malloc |
-|:--------------------------- | ----------:| ------:|
-|_hashmap<u32,u32>_           |         40 |    132 |
-|_hashmap<u64,u64>_           |         40 |    260 |
-|_linkedhashmap<u32,u32>_     |         48 |    260 |
-|_linkedhashmap<u64,u64>_     |         48 |    388 |
-|_linkedhashmap<u32,u32,i64>_ |         56 |    388 |
-|_linkedhashmap<u64,u64,i64>_ |         56 |    516 |
+| map                           |     struct | malloc |
+|:----------------------------- | ----------:| ------:|
+|_hash_map<u32,u32>_            |         40 |    132 |
+|_hash_map<u64,u64>_            |         40 |    260 |
+|_linked_hash_map<u32,u32>_     |         48 |    260 |
+|_linked_hash_map<u64,u64>_     |         48 |    388 |
+|_linked_hash_map<u32,u32,i64>_ |         56 |    388 |
+|_linked_hash_map<u64,u64,i64>_ |         56 |    516 |
 
 The following table shows the structure size in bytes on _x86_64_:
 
 | map                               | size |
 |:----------------------------------| ----:|
-|_sizeof(zedland::hashmap)_         |   40 |
-|_sizeof(zedland::linkedhashmap)_   |   48 |
+|_sizeof(zedland::hash_map)_        |   40 |
+|_sizeof(zedland::linked_hash_map)_ |   48 |
 |_sizeof(absl::flat_hash_map)_      |   48 |
 |_sizeof(std::unordered_map)_       |   56 |
 |_sizeof(tsl::robin_map)_           |   80 |
 |_sizeof(google::dense_hash_map)_   |   88 |
 
-_linkedhashmap_ by default uses 32-bit integers for indices,
+_linked_hash_map_ by default uses 32-bit integers for indices,
 limiting it to 2^31 entries, however, it can be instantiated
 with alternative integer types for indices.
 
@@ -81,13 +86,13 @@ with alternative integer types for indices.
 
 These extracts from the source show the array data structure.
 
-#### _hashmap_ parameters and table structure
+#### _hash_map_ parameters and table structure
 
 ```
 template <class Key, class Value,
           class Hash = std::hash<Key>,
           class Pred = std::equal_to<Key>>
-struct hashmap
+struct hash_map
 {
     static const size_t default_size =    (2<<3);  /* 16 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
@@ -100,13 +105,13 @@ struct hashmap
 }
 ```
 
-#### _linkedhashmap_ parameters and table structure
+#### _linked_hash_map_ parameters and table structure
 
 ```
 template <class Key, class Value, class Offset = int32_t,
           class Hash = std::hash<Key>,
           class Pred = std::equal_to<Key>>
-struct linkedhashmap
+struct linked_hash_map
 {
     static const size_t default_size =    (2<<3);  /* 16 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
