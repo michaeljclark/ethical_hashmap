@@ -60,19 +60,21 @@ _(table units are in bytes)_:
 
 | map                           |     struct | malloc |
 |:----------------------------- | ----------:| ------:|
+|_hash_set<u32>_                |         40 |     68 |
+|_hash_set<u64>_                |         40 |    132 |
 |_hash_map<u32,u32>_            |         40 |    132 |
 |_hash_map<u64,u64>_            |         40 |    260 |
-|_linked_hash_map<u32,u32>_     |         48 |    260 |
-|_linked_hash_map<u64,u64>_     |         48 |    388 |
-|_linked_hash_map<u32,u32,i64>_ |         56 |    388 |
+|_linked_hash_set<u32,i32>_     |         48 |    198 |
+|_linked_hash_set<u64,i64>_     |         56 |    388 |
+|_linked_hash_map<u32,u32,i32>_ |         48 |    260 |
 |_linked_hash_map<u64,u64,i64>_ |         56 |    516 |
 
 The following table shows the structure size in bytes on _x86_64_:
 
 | map                               | size |
 |:----------------------------------| ----:|
-|_sizeof(zedland::hash_map)_        |   40 |
-|_sizeof(zedland::linked_hash_map)_ |   48 |
+|_sizeof(hash_map)_                 |   40 |
+|_sizeof(linked_hash_map)_          |   48 |
 |_sizeof(absl::flat_hash_map)_      |   48 |
 |_sizeof(std::unordered_map)_       |   56 |
 |_sizeof(tsl::robin_map)_           |   80 |
