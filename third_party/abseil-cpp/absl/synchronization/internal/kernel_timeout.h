@@ -19,14 +19,16 @@
 // Constructible from a absl::Time (for a timeout to be respected) or {}
 // (for "no timeout".)
 // This is a private low-level API for use by a handful of low-level
-// components that are friends of this class. Higher-level components
-// should build APIs based on absl::Time and absl::Duration.
+// components. Higher-level components should build APIs based on
+// absl::Time and absl::Duration.
 
 #ifndef ABSL_SYNCHRONIZATION_INTERNAL_KERNEL_TIMEOUT_H_
 #define ABSL_SYNCHRONIZATION_INTERNAL_KERNEL_TIMEOUT_H_
 
 #include <time.h>
+
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 
 #include "absl/base/internal/raw_logging.h"
@@ -37,7 +39,6 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace synchronization_internal {
 
-class Futex;
 class Waiter;
 
 class KernelTimeout {
@@ -56,6 +57,13 @@ class KernelTimeout {
   // Unify on this and absl::Time, please.
 
   bool has_timeout() const { return ns_ != 0; }
+
+  // Convert to parameter for sem_timedwait/futex/similar.  Only for approved
+  // users.  Do not call if !has_timeout.
+  struct timespec MakeAbsTimespec() const;
+
+  // Convert to unix epoch nanos.  Do not call if !has_timeout.
+  int64_t MakeAbsNanos() const;
 
  private:
   // internal rep, not user visible: ns after unix epoch.
@@ -82,34 +90,6 @@ class KernelTimeout {
     return x;
   }
 
-  // Convert to parameter for sem_timedwait/futex/similar.  Only for approved
-  // users.  Do not call if !has_timeout.
-  struct timespec MakeAbsTimespec() {
-    int64_t n = ns_;
-    static const int64_t kNanosPerSecond = 1000 * 1000 * 1000;
-    if (n == 0) {
-      ABSL_RAW_LOG(
-          ERROR,
-          "Tried to create a timespec from a non-timeout; never do this.");
-      // But we'll try to continue sanely.  no-timeout ~= saturated timeout.
-      n = (std::numeric_limits<int64_t>::max)();
-    }
-
-    // Kernel APIs validate timespecs as being at or after the epoch,
-    // despite the kernel time type being signed.  However, no one can
-    // tell the difference between a timeout at or before the epoch (since
-    // all such timeouts have expired!)
-    if (n < 0) n = 0;
-
-    struct timespec abstime;
-    int64_t seconds = (std::min)(n / kNanosPerSecond,
-                               int64_t{(std::numeric_limits<time_t>::max)()});
-    abstime.tv_sec = static_cast<time_t>(seconds);
-    abstime.tv_nsec =
-        static_cast<decltype(abstime.tv_nsec)>(n % kNanosPerSecond);
-    return abstime;
-  }
-
 #ifdef _WIN32
   // Converts to milliseconds from now, or INFINITE when
   // !has_timeout(). For use by SleepConditionVariableSRW on
@@ -134,7 +114,8 @@ class KernelTimeout {
       constexpr uint64_t max_nanos =
           (std::numeric_limits<int64_t>::max)() - 999999u;
       uint64_t ms_from_now =
-          (std::min<uint64_t>(max_nanos, ns_ - now) + 999999u) / 1000000u;
+          ((std::min)(max_nanos, static_cast<uint64_t>(ns_ - now)) + 999999u) /
+          1000000u;
       if (ms_from_now > kInfinite) {
         return kInfinite;
       }
@@ -142,11 +123,45 @@ class KernelTimeout {
     }
     return 0;
   }
-#endif
 
-  friend class Futex;
   friend class Waiter;
+#endif
 };
+
+inline struct timespec KernelTimeout::MakeAbsTimespec() const {
+  int64_t n = ns_;
+  static const int64_t kNanosPerSecond = 1000 * 1000 * 1000;
+  if (n == 0) {
+    ABSL_RAW_LOG(
+        ERROR, "Tried to create a timespec from a non-timeout; never do this.");
+    // But we'll try to continue sanely.  no-timeout ~= saturated timeout.
+    n = (std::numeric_limits<int64_t>::max)();
+  }
+
+  // Kernel APIs validate timespecs as being at or after the epoch,
+  // despite the kernel time type being signed.  However, no one can
+  // tell the difference between a timeout at or before the epoch (since
+  // all such timeouts have expired!)
+  if (n < 0) n = 0;
+
+  struct timespec abstime;
+  int64_t seconds = (std::min)(n / kNanosPerSecond,
+                               int64_t{(std::numeric_limits<time_t>::max)()});
+  abstime.tv_sec = static_cast<time_t>(seconds);
+  abstime.tv_nsec = static_cast<decltype(abstime.tv_nsec)>(n % kNanosPerSecond);
+  return abstime;
+}
+
+inline int64_t KernelTimeout::MakeAbsNanos() const {
+  if (ns_ == 0) {
+    ABSL_RAW_LOG(
+        ERROR, "Tried to create a timeout from a non-timeout; never do this.");
+    // But we'll try to continue sanely.  no-timeout ~= saturated timeout.
+    return (std::numeric_limits<int64_t>::max)();
+  }
+
+  return ns_;
+}
 
 }  // namespace synchronization_internal
 ABSL_NAMESPACE_END

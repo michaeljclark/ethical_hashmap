@@ -220,16 +220,17 @@ struct LowLevelAlloc::Arena {
 };
 
 namespace {
-using ArenaStorage = std::aligned_storage<sizeof(LowLevelAlloc::Arena),
-                                          alignof(LowLevelAlloc::Arena)>::type;
-
 // Static storage space for the lazily-constructed, default global arena
 // instances.  We require this space because the whole point of LowLevelAlloc
 // is to avoid relying on malloc/new.
-ArenaStorage default_arena_storage;
-ArenaStorage unhooked_arena_storage;
+alignas(LowLevelAlloc::Arena) unsigned char default_arena_storage[sizeof(
+    LowLevelAlloc::Arena)];
+alignas(LowLevelAlloc::Arena) unsigned char unhooked_arena_storage[sizeof(
+    LowLevelAlloc::Arena)];
 #ifndef ABSL_LOW_LEVEL_ALLOC_ASYNC_SIGNAL_SAFE_MISSING
-ArenaStorage unhooked_async_sig_safe_arena_storage;
+alignas(
+    LowLevelAlloc::Arena) unsigned char unhooked_async_sig_safe_arena_storage
+    [sizeof(LowLevelAlloc::Arena)];
 #endif
 
 // We must use LowLevelCallOnce here to construct the global arenas, rather than
@@ -331,7 +332,7 @@ size_t GetPageSize() {
 #elif defined(__wasm__) || defined(__asmjs__)
   return getpagesize();
 #else
-  return sysconf(_SC_PAGESIZE);
+  return static_cast<size_t>(sysconf(_SC_PAGESIZE));
 #endif
 }
 
@@ -363,7 +364,7 @@ LowLevelAlloc::Arena::Arena(uint32_t flags_value)
 }
 
 // L < meta_data_arena->mu
-LowLevelAlloc::Arena *LowLevelAlloc::NewArena(int32_t flags) {
+LowLevelAlloc::Arena *LowLevelAlloc::NewArena(uint32_t flags) {
   Arena *meta_data_arena = DefaultArena();
 #ifndef ABSL_LOW_LEVEL_ALLOC_ASYNC_SIGNAL_SAFE_MISSING
   if ((flags & LowLevelAlloc::kAsyncSignalSafe) != 0) {
@@ -597,7 +598,7 @@ static void *DoAllocWithArena(size_t request, LowLevelAlloc::Arena *arena) {
     section.Leave();
     result = &s->levels;
   }
-  ANNOTATE_MEMORY_IS_UNINITIALIZED(result, request);
+  ABSL_ANNOTATE_MEMORY_IS_UNINITIALIZED(result, request);
   return result;
 }
 

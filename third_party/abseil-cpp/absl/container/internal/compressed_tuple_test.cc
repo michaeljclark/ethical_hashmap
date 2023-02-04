@@ -277,11 +277,11 @@ TEST(CompressedTupleTest, Nested) {
 
 TEST(CompressedTupleTest, Reference) {
   int i = 7;
-  std::string s = "Very long std::string that goes in the heap";
+  std::string s = "Very long string that goes in the heap";
   CompressedTuple<int, int&, std::string, std::string&> x(i, i, s, s);
 
   // Sanity check. We should have not moved from `s`
-  EXPECT_EQ(s, "Very long std::string that goes in the heap");
+  EXPECT_EQ(s, "Very long string that goes in the heap");
 
   EXPECT_EQ(x.get<0>(), x.get<1>());
   EXPECT_NE(&x.get<0>(), &x.get<1>());
@@ -402,6 +402,16 @@ TEST(CompressedTupleTest, EmptyFinalClass) {
   EXPECT_EQ(x.get<0>().f(), 5);
 }
 #endif
+
+// TODO(b/214288561): enable this test.
+TEST(CompressedTupleTest, DISABLED_NestedEbo) {
+  struct Empty1 {};
+  struct Empty2 {};
+  CompressedTuple<Empty1, CompressedTuple<Empty2>, int> x;
+  CompressedTuple<Empty1, Empty2, int> y;
+  // Currently fails with sizeof(x) == 8, sizeof(y) == 4.
+  EXPECT_EQ(sizeof(x), sizeof(y));
+}
 
 }  // namespace
 }  // namespace container_internal

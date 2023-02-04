@@ -42,7 +42,8 @@ namespace {
 // one of them is null, the results of p<q, p>q, p<=q, and p>=q are
 // unspecified. Therefore, instead we hardcode the direction of the
 // stack on platforms we know about.
-#if defined(__i386__) || defined(__x86_64__) || defined(__ppc__)
+#if defined(__i386__) || defined(__x86_64__) || defined(__ppc__) || \
+    defined(__aarch64__) || defined(__riscv)
 constexpr bool kStackGrowsDown = true;
 #else
 #error Need to define kStackGrowsDown
@@ -161,7 +162,7 @@ int GetSignalHandlerStackConsumption(void (*signal_handler)(int)) {
     // versions of musl have a bug that rejects ss_size==0. Work around this by
     // setting ss_size to MINSIGSTKSZ, which should be ignored by the kernel
     // when SS_DISABLE is set.
-    old_sigstk.ss_size = MINSIGSTKSZ;
+    old_sigstk.ss_size = static_cast<size_t>(MINSIGSTKSZ);
   }
   ABSL_RAW_CHECK(sigaltstack(&old_sigstk, nullptr) == 0,
                  "sigaltstack() failed");

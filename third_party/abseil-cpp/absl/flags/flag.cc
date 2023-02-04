@@ -16,18 +16,9 @@
 #include "absl/flags/flag.h"
 
 #include "absl/base/config.h"
-#include "absl/flags/internal/commandlineflag.h"
-#include "absl/flags/internal/flag.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-
-#ifndef NDEBUG
-#define ABSL_FLAGS_GET(T) \
-  T GetFlag(const absl::Flag<T>& flag) { return flag.Get(); }
-ABSL_FLAGS_INTERNAL_BUILTIN_TYPES(ABSL_FLAGS_GET)
-#undef ABSL_FLAGS_GET
-#endif
 
 // This global mutex protects on-demand construction of flag objects in MSVC
 // builds.

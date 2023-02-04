@@ -86,7 +86,8 @@ enum class ncmp : value_type { unordered = -127 };
 // incomplete types so they need to be defined after the types are complete.
 #ifdef __cpp_inline_variables
 
-#define ABSL_COMPARE_INLINE_BASECLASS_DECL(name)
+// A no-op expansion that can be followed by a semicolon at class level.
+#define ABSL_COMPARE_INLINE_BASECLASS_DECL(name) static_assert(true, "")
 
 #define ABSL_COMPARE_INLINE_SUBCLASS_DECL(type, name) \
   static const type name
@@ -99,7 +100,8 @@ enum class ncmp : value_type { unordered = -127 };
 #define ABSL_COMPARE_INLINE_BASECLASS_DECL(name) \
   ABSL_CONST_INIT static const T name
 
-#define ABSL_COMPARE_INLINE_SUBCLASS_DECL(type, name)
+// A no-op expansion that can be followed by a semicolon at class level.
+#define ABSL_COMPARE_INLINE_SUBCLASS_DECL(type, name) static_assert(true, "")
 
 #define ABSL_COMPARE_INLINE_INIT(type, name, init) \
   template <typename T>                            \
@@ -542,9 +544,9 @@ namespace compare_internal {
 // Helper functions to do a boolean comparison of two keys given a boolean
 // or three-way comparator.
 // SFINAE prevents implicit conversions to bool (such as from int).
-template <typename Bool,
-          absl::enable_if_t<std::is_same<bool, Bool>::value, int> = 0>
-constexpr bool compare_result_as_less_than(const Bool r) { return r; }
+template <typename BoolT,
+          absl::enable_if_t<std::is_same<bool, BoolT>::value, int> = 0>
+constexpr bool compare_result_as_less_than(const BoolT r) { return r; }
 constexpr bool compare_result_as_less_than(const absl::weak_ordering r) {
   return r < 0;
 }

@@ -30,6 +30,10 @@
 #ifndef ABSL_FUNCTIONAL_BIND_FRONT_H_
 #define ABSL_FUNCTIONAL_BIND_FRONT_H_
 
+#if defined(__cpp_lib_bind_front) && __cpp_lib_bind_front >= 201907L
+#include <functional>  // For std::bind_front.
+#endif  // defined(__cpp_lib_bind_front) && __cpp_lib_bind_front >= 201907L
+
 #include "absl/functional/internal/front_binder.h"
 #include "absl/utility/utility.h"
 
@@ -38,9 +42,7 @@ ABSL_NAMESPACE_BEGIN
 
 // bind_front()
 //
-// Binds the first N arguments of an invocable object and stores them by value,
-// except types of `std::reference_wrapper` which are 'unwound' and stored by
-// reference.
+// Binds the first N arguments of an invocable object and stores them by value.
 //
 // Like `std::bind()`, `absl::bind_front()` is implicitly convertible to
 // `std::function`.  In particular, it may be used as a simpler replacement for
@@ -48,7 +50,8 @@ ABSL_NAMESPACE_BEGIN
 // specified. More importantly, it provides more reliable correctness guarantees
 // than `std::bind()`; while `std::bind()` will silently ignore passing more
 // parameters than expected, for example, `absl::bind_front()` will report such
-// mis-uses as errors.
+// mis-uses as errors. In C++20, `absl::bind_front` is replaced by
+// `std::bind_front`.
 //
 // absl::bind_front(a...) can be seen as storing the results of
 // std::make_tuple(a...).
@@ -140,7 +143,9 @@ ABSL_NAMESPACE_BEGIN
 //
 // Example: Storing bound arguments by reference.
 //
-//   void Print(const string& a, const string& b) { LOG(INFO) << a << b; }
+//   void Print(const std::string& a, const std::string& b) {
+//     std::cerr << a << b;
+//   }
 //
 //   std::string hi = "Hello, ";
 //   std::vector<std::string> names = {"Chuk", "Gek"};
@@ -152,6 +157,27 @@ ABSL_NAMESPACE_BEGIN
 //   // dangling references.
 //   foo->DoInFuture(absl::bind_front(Print, std::ref(hi), "Guest"));  // BAD!
 //   auto f = absl::bind_front(Print, std::ref(hi), "Guest"); // BAD!
+//
+// Example: Storing reference-like types.
+//
+//   void Print(absl::string_view a, const std::string& b) {
+//     std::cerr << a << b;
+//   }
+//
+//   std::string hi = "Hello, ";
+//   // Copies "hi".
+//   absl::bind_front(Print, hi)("Chuk");
+//
+//   // Compile error: std::reference_wrapper<const string> is not implicitly
+//   // convertible to string_view.
+//   // absl::bind_front(Print, std::cref(hi))("Chuk");
+//
+//   // Doesn't copy "hi".
+//   absl::bind_front(Print, absl::string_view(hi))("Chuk");
+//
+#if defined(__cpp_lib_bind_front) && __cpp_lib_bind_front >= 201907L
+using std::bind_front;
+#else   // defined(__cpp_lib_bind_front) && __cpp_lib_bind_front >= 201907L
 template <class F, class... BoundArgs>
 constexpr functional_internal::bind_front_t<F, BoundArgs...> bind_front(
     F&& func, BoundArgs&&... args) {
@@ -159,6 +185,7 @@ constexpr functional_internal::bind_front_t<F, BoundArgs...> bind_front(
       absl::in_place, absl::forward<F>(func),
       absl::forward<BoundArgs>(args)...);
 }
+#endif  // defined(__cpp_lib_bind_front) && __cpp_lib_bind_front >= 201907L
 
 ABSL_NAMESPACE_END
 }  // namespace absl

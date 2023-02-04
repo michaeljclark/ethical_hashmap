@@ -40,23 +40,11 @@ Pod::Spec.new do |s|
     'USE_HEADERMAP' => 'NO',
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
   }
-  s.ios.deployment_target = '7.0'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
   s.tvos.deployment_target = '9.0'
   s.watchos.deployment_target = '2.0'
 """
-
-# Limited platforms that abseil supports.
-# This is mainly because of sigaltstack unavailable on watchOS.
-LIMITED_SUPPORT_PLATFORMS = [
-    "ios.deployment_target = '7.0'",
-    "osx.deployment_target = '10.9'",
-]
-
-# Custom specification per rule.
-CUSTOM_SPEC_MAP = {
-    "//absl/debugging:failure_signal_handler": LIMITED_SUPPORT_PLATFORMS,
-}
 
 # Rule object representing the rule of Bazel BUILD.
 Rule = collections.namedtuple(
@@ -200,12 +188,6 @@ def write_podspec_rule(f, rule, depth):
     name = get_spec_name(dep.replace(":", "/"))
     f.write("{indent}{var}.dependency '{dep}'\n".format(
         indent=indent, var=spec_var, dep=name))
-  # Writes custom specification.
-  custom_spec = CUSTOM_SPEC_MAP.get(rule.package + ":" + rule.name)
-  if custom_spec:
-    for spec in custom_spec:
-      f.write("{indent}{var}.{spec}\n".format(
-          indent=indent, var=spec_var, spec=spec))
 
 
 def write_indented_list(f, leading, values):

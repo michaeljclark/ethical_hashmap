@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ABSL_CONTAINER_INTERNAL_CONTAINER_H_
-#define ABSL_CONTAINER_INTERNAL_CONTAINER_H_
+#ifndef ABSL_CONTAINER_INTERNAL_COMMON_H_
+#define ABSL_CONTAINER_INTERNAL_COMMON_H_
 
 #include <cassert>
 #include <type_traits>
@@ -56,7 +56,7 @@ class node_handle_base {
  public:
   using allocator_type = Alloc;
 
-  constexpr node_handle_base() {}
+  constexpr node_handle_base() = default;
   node_handle_base(node_handle_base&& other) noexcept {
     *this = std::move(other);
   }
@@ -84,10 +84,11 @@ class node_handle_base {
     PolicyTraits::transfer(alloc(), slot(), s);
   }
 
-  struct move_tag_t {};
-  node_handle_base(move_tag_t, const allocator_type& a, slot_type* s)
+  struct construct_tag_t {};
+  template <typename... Args>
+  node_handle_base(construct_tag_t, const allocator_type& a, Args&&... args)
       : alloc_(a) {
-    PolicyTraits::construct(alloc(), slot(), s);
+    PolicyTraits::construct(alloc(), slot(), std::forward<Args>(args)...);
   }
 
   void destroy() {
@@ -109,9 +110,8 @@ class node_handle_base {
   allocator_type* alloc() { return std::addressof(*alloc_); }
 
  private:
-  absl::optional<allocator_type> alloc_;
-  mutable absl::aligned_storage_t<sizeof(slot_type), alignof(slot_type)>
-      slot_space_;
+  absl::optional<allocator_type> alloc_ = {};
+  alignas(slot_type) mutable unsigned char slot_space_[sizeof(slot_type)] = {};
 };
 
 // For sets.
@@ -139,6 +139,7 @@ class node_handle<Policy, PolicyTraits, Alloc,
                   absl::void_t<typename Policy::mapped_type>>
     : public node_handle_base<PolicyTraits, Alloc> {
   using Base = node_handle_base<PolicyTraits, Alloc>;
+  using slot_type = typename PolicyTraits::slot_type;
 
  public:
   using key_type = typename Policy::key_type;
@@ -146,8 +147,11 @@ class node_handle<Policy, PolicyTraits, Alloc,
 
   constexpr node_handle() {}
 
-  auto key() const -> decltype(PolicyTraits::key(this->slot())) {
-    return PolicyTraits::key(this->slot());
+  // When C++17 is available, we can use std::launder to provide mutable
+  // access to the key. Otherwise, we provide const access.
+  auto key() const
+      -> decltype(PolicyTraits::mutable_key(std::declval<slot_type*>())) {
+    return PolicyTraits::mutable_key(this->slot());
   }
 
   mapped_type& mapped() const {
@@ -183,8 +187,8 @@ struct CommonAccess {
   }
 
   template <typename T, typename... Args>
-  static T Move(Args&&... args) {
-    return T(typename T::move_tag_t{}, std::forward<Args>(args)...);
+  static T Construct(Args&&... args) {
+    return T(typename T::construct_tag_t{}, std::forward<Args>(args)...);
   }
 };
 
@@ -200,4 +204,4 @@ struct InsertReturnType {
 ABSL_NAMESPACE_END
 }  // namespace absl
 
-#endif  // ABSL_CONTAINER_INTERNAL_CONTAINER_H_
+#endif  // ABSL_CONTAINER_INTERNAL_COMMON_H_
