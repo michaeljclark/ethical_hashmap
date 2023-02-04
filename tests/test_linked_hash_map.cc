@@ -9,7 +9,7 @@
 #include <chrono>
 #include <utility>
 
-#include "linkedhashmap.h"
+#include "linked_hash_map.h"
 
 using namespace std::chrono;
 
@@ -19,9 +19,9 @@ static const number_pair_t numbers[] = {
     { 7, 1 }, { 11, 2 }, { 15, 3 }, { 19, 4 }, { 21, 5 }, { 0, 0}
 };
 
-void test_linkedhashmap_simple()
+void test_linked_hash_map_simple()
 {
-    zedland::linkedhashmap<uintptr_t,uintptr_t> ht;
+    zedland::linked_hash_map<uintptr_t,uintptr_t> ht;
     for (const number_pair_t *n = numbers; n->first != 0; n++) {
         ht.insert(n->first, n->second);
     }
@@ -37,9 +37,9 @@ void test_linkedhashmap_simple()
     }
 }
 
-void test_linkedhashmap_insert()
+void test_linked_hash_map_insert()
 {
-    zedland::linkedhashmap<uintptr_t,uintptr_t> ht;
+    zedland::linked_hash_map<uintptr_t,uintptr_t> ht;
 
     auto i1 = ht.insert({777, 1});
     auto i2 = ht.insert(i1, {888, 2});
@@ -58,13 +58,13 @@ void test_linkedhashmap_insert()
     }
 }
 
-void test_linkedhashmap_copy()
+void test_linked_hash_map_copy()
 {
     static const number_pair_t numbers[] = {
         { 666, 4 }, { 777, 1 }, { 888, 2 }, {999, 3}, {0, 0}
     };
 
-    zedland::linkedhashmap<uintptr_t,uintptr_t> ht = std::move(zedland::linkedhashmap<uintptr_t,uintptr_t>());
+    zedland::linked_hash_map<uintptr_t,uintptr_t> ht = std::move(zedland::linked_hash_map<uintptr_t,uintptr_t>());
     size_t i, count;
 
     ht.insert({666, 4});
@@ -81,13 +81,13 @@ void test_linkedhashmap_copy()
     assert(count == 4);
 }
 
-void test_linkedhashmap_move()
+void test_linked_hash_map_move()
 {
     static const number_pair_t numbers[] = {
         { 666, 4 }, { 777, 1 }, { 888, 2 }, {999, 3}, {0, 0}
     };
 
-    zedland::linkedhashmap<uintptr_t,uintptr_t> hs, ht;
+    zedland::linked_hash_map<uintptr_t,uintptr_t> hs, ht;
     size_t i, count;
 
     ht.insert({666, 4});
@@ -105,7 +105,7 @@ void test_linkedhashmap_move()
     }
     assert(count == 4);
 
-    zedland::linkedhashmap<uintptr_t,uintptr_t> hu(hs);
+    zedland::linked_hash_map<uintptr_t,uintptr_t> hu(hs);
 
     count = 0;
     for (auto ent : hu) {
@@ -116,9 +116,9 @@ void test_linkedhashmap_move()
     assert(count == 4);
 }
 
-void test_linkedhashmap_delete()
+void test_linked_hash_map_delete()
 {
-    zedland::linkedhashmap<uintptr_t,uintptr_t> ht;
+    zedland::linked_hash_map<uintptr_t,uintptr_t> ht;
     ht.insert(7, 8);
     assert(ht.find(7)->second == 8);
     ht.erase(7);
@@ -139,9 +139,9 @@ void insert_random(size_t limit, F fn)
     }
 }
 
-void test_linkedhashmap_random(size_t limit)
+void test_linked_hash_map_random(size_t limit)
 {
-    zedland::linkedhashmap<uintptr_t,uintptr_t> ht;
+    zedland::linked_hash_map<uintptr_t,uintptr_t> ht;
     std::map<uintptr_t,uintptr_t> hm;
 
     insert_random(limit, [&](size_t key, size_t val) {
@@ -156,11 +156,11 @@ void test_linkedhashmap_random(size_t limit)
 
 int main(int argc, char **argv)
 {
-    test_linkedhashmap_simple();
-    test_linkedhashmap_insert();
-    test_linkedhashmap_delete();
-    test_linkedhashmap_random(1<<16);
-    test_linkedhashmap_copy();
-    test_linkedhashmap_move();
+    test_linked_hash_map_simple();
+    test_linked_hash_map_insert();
+    test_linked_hash_map_delete();
+    test_linked_hash_map_random(1<<16);
+    test_linked_hash_map_copy();
+    test_linked_hash_map_move();
     return 0;
 }

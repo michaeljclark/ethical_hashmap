@@ -1,5 +1,5 @@
 /*
- * Fast open addressing hash table with tombstone bit map.
+ * Fast open addressing linked hash table with tombstone bit map.
  *
  * Copyright (c) 2020 Michael Clark <michaeljclark@mac.com>
  *
@@ -30,16 +30,19 @@
 namespace zedland {
 
 /*
- * This open addressing hashset uses a 2-bit entry per slot bitmap
- * that eliminates the need for empty and deleted key sentinels.
- * The hashset has a simple array of key and value pairs and the
+ * This open addressing linked_hash_set uses a 2-bit entry per slot
+ * bitmap that eliminates the need for empty and deleted key sentinels.
+ * The hashmap has a simple array of key and value pairs and the
  * tombstone bitmap, which are allocated in a single call to malloc.
+ *
+ * The linked_hash_set entries contains a bidirectional linked list
+ * for predictable iteration order based on order of insertion.
  */
 
-template <class Key,
+template <class Key, class Offset = int32_t,
           class Hash = std::hash<Key>,
           class Pred = std::equal_to<Key>>
-struct hashset
+struct linked_hash_set
 {
     static const size_t default_size =    (2<<3);  /* 16 */
     static const size_t load_factor =     (2<<15); /* 0.5 */
@@ -50,17 +53,24 @@ struct hashset
 
     struct data_type {
         Key first;
+        Offset prev;
+        Offset next;
     };
 
     typedef Key value_type;
     typedef Hash hasher;
     typedef Pred key_equal;
+    typedef Offset offset_type;
     typedef data_type& reference;
     typedef const data_type& const_reference;
+
+    enum : offset_type { empty_offset = offset_type(-1) };
 
     size_t used;
     size_t tombs;
     size_t limit;
+    offset_type head;
+    offset_type tail;
     data_type *data;
     uint64_t *bitmap;
 
@@ -70,18 +80,13 @@ struct hashset
 
     struct iterator
     {
-        hashset *h;
+        linked_hash_set *h;
         size_t i;
 
-        size_t step(size_t i) {
-            while (i < h->limit &&
-                   (bitmap_get(h->bitmap, i) & occupied) != occupied) i++;
-            return i;
-        }
-        iterator& operator++() { i = step(i+1); return *this; }
+        iterator& operator++() { i = h->data[i].next; return *this; }
         iterator operator++(int) { iterator r = *this; ++(*this); return r; }
-        data_type& operator*() { i = step(i); return h->data[i]; }
-        data_type* operator->() { i = step(i); return &h->data[i]; }
+        data_type& operator*() { return h->data[i]; }
+        data_type* operator->() { return &h->data[i]; }
         bool operator==(const iterator &o) const { return h == o.h && i == o.i; }
         bool operator!=(const iterator &o) const { return h != o.h || i != o.i; }
     };
@@ -90,22 +95,23 @@ struct hashset
      * constructors and destructor
      */
 
-    inline hashset() : hashset(default_size) {}
-    inline hashset(size_t initial_size) :
-        used(0), tombs(0), limit(initial_size)
+    inline linked_hash_set() : linked_hash_set(default_size) {}
+    inline linked_hash_set(size_t initial_size) :
+        used(0), tombs(0), limit(initial_size),
+        head(empty_offset), tail(empty_offset)
     {
-        size_t data_size = sizeof(data_type) * limit;
-        size_t bitmap_size = limit >> 2;
+        size_t data_size = sizeof(data_type) * initial_size;
+        size_t bitmap_size = initial_size >> 2;
         size_t total_size = data_size + bitmap_size;
 
-        assert(is_pow2(limit));
+        assert(is_pow2(initial_size));
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
         memset(bitmap, 0, bitmap_size);
     }
 
-    inline ~hashset()
+    inline ~linked_hash_set()
     {
         for (size_t i = 0; i < limit; i++) {
             if ((bitmap_get(bitmap, i) & occupied) == occupied) {
@@ -119,8 +125,9 @@ struct hashset
      * copy constructor and assignment operator
      */
 
-    inline hashset(const hashset &o) :
-        used(o.used), tombs(o.tombs), limit(o.limit)
+    inline linked_hash_set(const linked_hash_set &o) :
+        used(o.used), tombs(o.tombs), limit(o.limit),
+        head(o.head), tail(o.tail)
     {
         size_t data_size = sizeof(data_type) * limit;
         size_t bitmap_size = limit >> 2;
@@ -137,21 +144,24 @@ struct hashset
         }
     }
 
-    inline hashset(hashset &&o) :
+    inline linked_hash_set(linked_hash_set &&o) :
         used(o.used), tombs(o.tombs), limit(o.limit),
+        head(o.head), tail(o.tail),
         data(o.data), bitmap(o.bitmap)
     {
         o.data = nullptr;
         o.bitmap = nullptr;
     }
 
-    inline hashset& operator=(const hashset &o)
+    inline linked_hash_set& operator=(const linked_hash_set &o)
     {
         free(data);
 
         used = o.used;
         tombs = o.tombs;
         limit = o.limit;
+        head = o.head;
+        tail = o.tail;
 
         size_t data_size = sizeof(data_type) * limit;
         size_t bitmap_size = limit >> 2;
@@ -170,13 +180,15 @@ struct hashset
         return *this;
     }
 
-    inline hashset& operator=(hashset &&o)
+    inline linked_hash_set& operator=(linked_hash_set &&o)
     {
         data = o.data;
         bitmap = o.bitmap;
         used = o.used;
         tombs = o.tombs;
         limit = o.limit;
+        head = o.head;
+        tail = o.tail;
 
         o.data = nullptr;
         o.bitmap = nullptr;
@@ -195,8 +207,8 @@ struct hashset
     inline size_t hash_index(uint64_t h) { return h & index_mask(); }
     inline size_t key_index(Key key) { return hash_index(_hasher(key)); }
     inline hasher hash_function() const { return _hasher; }
-    inline iterator begin() { return iterator{ this, 0 }; }
-    inline iterator end() { return iterator{ this, limit }; }
+    inline iterator begin() { return iterator{ this, size_t(head) }; }
+    inline iterator end() { return iterator{ this, size_t(empty_offset) }; }
 
     /*
      * bit manipulation helpers
@@ -239,13 +251,23 @@ struct hashset
         limit = new_size;
         memset(bitmap, 0, bitmap_size);
 
-        size_t i = 0;
-        for (data_type *v = old_data; v != old_data + old_size; v++, i++) {
-            if ((bitmap_get(old_bitmap, i) & occupied) != occupied) continue;
+        offset_type k = empty_offset;
+        for (size_t i = head; i != empty_offset; i = old_data[i].next) {
+            data_type *v = old_data + i;
             for (size_t j = key_index(v->first); ; j = (j+1) & index_mask()) {
                 if ((bitmap_get(bitmap, j) & occupied) != occupied) {
                     bitmap_set(bitmap, j, occupied);
-                    data[j] = /* copy */ *v;
+                    if (i == head) head = j;
+                    if (i == tail) tail = j;
+                    data[j].first = /* copy */ v->first;
+                    data[j].next = empty_offset;
+                    if (k == empty_offset) {
+                        data[j].prev = empty_offset;
+                    } else {
+                        data[j].prev = k;
+                        data[k].next = j;
+                    }
+                    k = j;
                     break;
                 }
             }
@@ -253,6 +275,46 @@ struct hashset
 
         tombs = 0;
         free(old_data);
+    }
+
+    /* inserts indice link before specified position */
+    void insert_link_internal(size_t pos, size_t i)
+    {
+        if (head == tail && head == empty_offset) {
+            head = tail = i;
+            data[i].next = data[i].prev = empty_offset;
+        } else if (pos == empty_offset) {
+            data[i].next = empty_offset;
+            data[i].prev = tail;
+            data[tail].next = i;
+            tail = i;
+        } else {
+            data[i].next = pos;
+            data[i].prev = data[pos].prev;
+            if (data[pos].prev != empty_offset) {
+                data[data[pos].prev].next = i;
+            }
+            data[pos].prev = i;
+            if (head == pos) head = i;
+        }
+    }
+
+    /* remove indice link at the specified index */
+    void erase_link_internal(size_t i)
+    {
+        assert(head != empty_offset && tail != empty_offset);
+        if (head == tail && i == head) {
+            head = tail = empty_offset;
+        } else {
+            if (head == i) head = data[i].next;
+            if (tail == i) tail = data[i].prev;
+            if (data[i].prev != empty_offset) {
+                data[data[i].prev].next = data[i].next;
+            }
+            if (data[i].next != empty_offset) {
+                data[data[i].next].prev = data[i].prev;
+            }
+        }
     }
 
     void clear()
@@ -264,16 +326,20 @@ struct hashset
         }
         size_t bitmap_size = limit >> 2;
         memset(bitmap, 0, bitmap_size);
+        head = tail = empty_offset;
         used = tombs = 0;
     }
 
-    iterator insert(const value_type& v)
+    iterator insert(const value_type& val) { return insert(end(), val); }
+
+    iterator insert(iterator h, const value_type& v)
     {
         for (size_t i = key_index(v); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
                 data[i].first = /* copy */ v;
+                insert_link_internal(h.i, i);
                 used++;
                 if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
@@ -316,6 +382,7 @@ struct hashset
                 bitmap_set(bitmap, i, deleted);
                 data[i].~data_type();
                 bitmap_clear(bitmap, i, occupied);
+                erase_link_internal(i);
                 used--;
                 tombs++;
                 return;

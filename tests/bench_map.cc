@@ -14,8 +14,8 @@
 #include "tsl/robin_map.h"
 
 #include "dense_hash_map"
-#include "hashmap.h"
-#include "linkedhashmap.h"
+#include "hash_map.h"
+#include "linked_hash_map.h"
 
 using namespace std::chrono;
 
@@ -65,7 +65,7 @@ std::vector<std::pair<K,V>> get_random(size_t count)
 {
     rng r;
     std::vector<std::pair<K,V>> data;
-    zedland::hashmap<K,char> set;
+    zedland::hash_map<K,char> set;
     for (size_t i = 0; i < count; i++) {
         K key = r.get<K>();
         while (set[key] == 1) key = r.get<K>();
@@ -231,7 +231,6 @@ int main(int argc, char **argv)
         count = atoi(argv[1]);
     }
 
-    printf("benchmark: tsl::robin_map, zedland::hashmap, google::dense_hash_map, absl::flat_hash_map\n");
 #ifndef _WIN32
     printf("cpu_model: %s\n", get_cpu_model().c_str());
 #endif
@@ -239,16 +238,16 @@ int main(int argc, char **argv)
     heading();
     bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",count);
     bench_spread<tsl::robin_map<size_t,size_t>>("tsl::robin_map::operator[]",count);
-    bench_spread<zedland::hashmap<size_t,size_t>>("zedland::hashmap::operator[]",count);
-    bench_spread<zedland::linkedhashmap<size_t,size_t>>("zedland::linkedhashmap::operator[]",count);
+    bench_spread<zedland::hash_map<size_t,size_t>>("zedland::hash_map::operator[]",count);
+    bench_spread<zedland::linked_hash_map<size_t,size_t>>("zedland::linked_hash_map::operator[]",count);
     bench_spread_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map::operator[]",count);
     bench_spread<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map::operator[]",count);
 
     heading();
     bench_map<std::unordered_map<size_t,size_t>>("std::unordered_map", count);
     bench_map<tsl::robin_map<size_t,size_t>>("tsl::robin_map", count);
-    bench_map<zedland::hashmap<size_t,size_t>>("zedland::hashmap", count);
-    bench_map<zedland::linkedhashmap<size_t,size_t>>("zedland::linkedhashmap", count);
+    bench_map<zedland::hash_map<size_t,size_t>>("zedland::hash_map", count);
+    bench_map<zedland::linked_hash_map<size_t,size_t>>("zedland::linked_hash_map", count);
     bench_map_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map", count);
     bench_map<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map",count);
 }

@@ -9,12 +9,12 @@
 #include <initializer_list>
 
 #include "sha256.h"
-#include "hashmap.h"
-#include "hashset.h"
+#include "linked_hash_map.h"
+#include "linked_hash_set.h"
 
-struct hash_hashmap
+struct hash_linked_hash_map
 {
-    typedef zedland::hashmap<int,int> hashmap_t;
+    typedef zedland::linked_hash_map<int,int> hashmap_t;
 
     size_t operator()(hashmap_t &m)
     {
@@ -30,11 +30,11 @@ struct hash_hashmap
     }
 };
 
-void test_hashset_simple()
+void test_linked_hash_set_simple()
 {
     static const uintptr_t numbers[] = { 8, 9, 6, 7, 4, 5, 2, 3, 0 };
 
-    zedland::hashset<uintptr_t> ht;
+    zedland::linked_hash_set<uintptr_t> ht;
 
     for (const uintptr_t *n = numbers; *n != 0; n++) {
         ht.insert(*n);
@@ -43,25 +43,25 @@ void test_hashset_simple()
         assert(ht.find(*n)->first == *n);
     }
     const uintptr_t *n = numbers;
-    for (uintptr_t n : numbers) {
-        if (n > 0) assert(ht.find(n) != ht.end());
+    for (auto &ent : ht) {
+        assert(ent.first == *n++);
     }
 }
 
-zedland::hashmap<int,int>
+zedland::linked_hash_map<int,int>
 make_map(std::initializer_list<std::pair<int,int>> l)
 {
-    zedland::hashmap<int,int> m;
+    zedland::linked_hash_map<int,int> m;
     for (auto i = l.begin(); i != l.end(); i++) {
         m.insert(i->first, i->second);
     }
     return std::move(m);
 }
 
-typedef zedland::hashmap<int,int> hashmap_t;
-typedef zedland::hashset<hashmap_t,hash_hashmap> hashset_t;
+typedef zedland::linked_hash_map<int,int> hashmap_t;
+typedef zedland::linked_hash_set<hashmap_t,int32_t,hash_linked_hash_map> hashset_t;
 
-void test_hashset_hashmap()
+void test_linked_hash_set_hashmap()
 {
     hashset_t s;
     s.insert(make_map({{1,2},{3,4},{5,6}}));
@@ -79,7 +79,7 @@ void test_hashset_hashmap()
 
 int main(int argc, char **argv)
 {
-    test_hashset_simple();
-    test_hashset_hashmap();
+    test_linked_hash_set_simple();
+    test_linked_hash_set_hashmap();
     return 0;
 }

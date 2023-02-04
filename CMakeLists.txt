@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 include(CheckCXXCompilerFlag)
 
-project(zhashmap)
+project(zhash_map)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -28,8 +28,8 @@ include_directories(third_party/robin-map/include)
 add_executable(bench_map tests/bench_map.cc)
 target_link_libraries(bench_map absl_hash absl_raw_hash_set)
 
-add_executable(test_hashmap tests/test_hashmap.cc)
-add_executable(test_hashset tests/test_hashset.cc tests/sha256.c)
-add_executable(test_linkedhashmap tests/test_linkedhashmap.cc)
-add_executable(test_linkedhashset tests/test_linkedhashset.cc tests/sha256.c)
+add_executable(test_hash_map tests/test_hash_map.cc)
+add_executable(test_hash_set tests/test_hash_set.cc tests/sha256.c)
+add_executable(test_linked_hash_map tests/test_linked_hash_map.cc)
+add_executable(test_linked_hash_set tests/test_linked_hash_set.cc tests/sha256.c)
 add_executable(test_sha_delta tests/test_sha_delta.cc tests/sha256.c)
