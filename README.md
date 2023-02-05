@@ -30,7 +30,6 @@ hint in the first argument of _insert_ to set the position of a new
 value inserted into the linked list, while _find_ uses the hashed key
 index to locate _key value pairs_ in the hash table.
 
-
 ## Design 
 
 These maps are designed for a small memory foorprint. There is one
@@ -84,66 +83,9 @@ _linked_hash_map_ by default uses 32-bit integers for indices,
 limiting it to 2^31 entries, however, it can be instantiated
 with alternative integer types for indices.
 
-### Data structure
-
-These extracts from the source show the array data structure.
-
-#### _hash_map_ parameters and table structure
+## Build Instructions
 
 ```
-template <class Key, class Value,
-          class Hash = std::hash<Key>,
-          class Pred = std::equal_to<Key>>
-struct hash_map
-{
-    static const size_t default_size =    (2<<3);  /* 16 */
-    static const size_t load_factor =     (2<<15); /* 0.5 */
-    static const size_t load_multiplier = (2<<16); /* 1.0 */
-    ...
-    struct data_type {
-        Key first;
-        Value second;
-    };	
-}
-```
-
-#### _linked_hash_map_ parameters and table structure
-
-```
-template <class Key, class Value, class Offset = int32_t,
-          class Hash = std::hash<Key>,
-          class Pred = std::equal_to<Key>>
-struct linked_hash_map
-{
-    static const size_t default_size =    (2<<3);  /* 16 */
-    static const size_t load_factor =     (2<<15); /* 0.5 */
-    static const size_t load_multiplier = (2<<16); /* 1.0 */
-    ...
-    struct data_type {
-        Key first;
-        Value second;
-        Offset prev;
-        Offset next;
-    };
-}
-```
-
-## License
-
-This software is released under the ISC license:
-
-```
-Copyright (c) 2020 Michael Clark <michaeljclark@mac.com>
-
-Permission to use, copy, modify, and distribute this software for any
-purpose with or without fee is hereby granted, provided that the above
-copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build
 ```
