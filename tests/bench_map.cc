@@ -8,12 +8,6 @@
 #include <vector>
 #include <functional>
 
-#include "absl/hash/hash.h"
-#include "absl/container/flat_hash_map.h"
-
-#include "tsl/robin_map.h"
-
-#include "dense_hash_map"
 #include "hash_map.h"
 #include "linked_hash_map.h"
 
@@ -125,69 +119,11 @@ void bench_spread(const char *name, size_t count)
 }
 
 template <typename Map>
-void bench_spread_google(const char *name, size_t count, size_t spread)
-{
-    Map map;
-    map.set_empty_key(-1);
-    auto t1 = system_clock::now();
-    for (size_t i = 0; i < count; i++) {
-        map[i&spread]++;
-    }
-    auto t2 = system_clock::now();
-    char buf[128];
-    snprintf(buf, sizeof(buf), "_%s_", name);
-    printf("|%-40s|%8zu|%12zu|%8.1f|\n", buf, spread, count,
-        duration_cast<nanoseconds>(t2-t1).count()/(float)count);
-}
-
-template <typename Map>
-void bench_spread_google(const char *name, size_t count)
-{
-    for (const size_t *s = sizes; *s != 0; s++) {
-        bench_spread_google<Map>(name,count,*s);
-    }
-    printf("|%-40s|%8s|%12s|%8s|\n", "-", "-", "-", "-");
-}
-
-template <typename Map>
 void bench_map(const char* name, size_t count)
 {
     typedef std::pair<typename Map::key_type,typename Map::mapped_type> pair_type;
 
     Map ht;
-
-    auto data = get_random<typename Map::key_type,typename Map::mapped_type>(count);
-    auto t1 = system_clock::now();
-    for (auto &ent : data) {
-        ht.insert(ht.end(), pair_type(ent.first, ent.second));
-    }
-    auto t2 = system_clock::now();
-    ht.clear();
-    auto t3 = system_clock::now();
-    for (auto &ent : data) {
-        ht.insert(ht.end(), pair_type(ent.first, ent.second));
-    }
-    auto t4 = system_clock::now();
-    for (auto &ent : data) {
-        assert(ht.find(ent.first)->second == ent.second);
-    }
-    auto t5 = system_clock::now();
-    for (auto &ent : data) {
-        ht.erase(ent.first);
-    }
-    auto t6 = system_clock::now();
-
-    print_timings(name, t1, t2, t3, t4, t5, t6, count);
-}
-
-template <typename Map>
-void bench_map_google(const char* name, size_t count)
-{
-    typedef std::pair<typename Map::key_type,typename Map::mapped_type> pair_type;
-
-    Map ht;
-    ht.set_empty_key(-1);
-    ht.set_deleted_key(-2);
 
     auto data = get_random<typename Map::key_type,typename Map::mapped_type>(count);
     auto t1 = system_clock::now();
@@ -236,18 +172,10 @@ int main(int argc, char **argv)
 #endif
 
     heading();
-    bench_spread<std::unordered_map<size_t,size_t>>("std::unordered_map::operator[]",count);
-    bench_spread<tsl::robin_map<size_t,size_t>>("tsl::robin_map::operator[]",count);
     bench_spread<zedland::hash_map<size_t,size_t>>("zedland::hash_map::operator[]",count);
     bench_spread<zedland::linked_hash_map<size_t,size_t>>("zedland::linked_hash_map::operator[]",count);
-    bench_spread_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map::operator[]",count);
-    bench_spread<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map::operator[]",count);
 
     heading();
-    bench_map<std::unordered_map<size_t,size_t>>("std::unordered_map", count);
-    bench_map<tsl::robin_map<size_t,size_t>>("tsl::robin_map", count);
     bench_map<zedland::hash_map<size_t,size_t>>("zedland::hash_map", count);
     bench_map<zedland::linked_hash_map<size_t,size_t>>("zedland::linked_hash_map", count);
-    bench_map_google<google::dense_hash_map<size_t,size_t>>("google::dense_hash_map", count);
-    bench_map<absl::flat_hash_map<size_t,size_t>>("absl::flat_hash_map",count);
 }
