@@ -32,7 +32,7 @@ index to locate _key value pairs_ in the hash table.
 
 ## Design 
 
-These maps are designed for a small memory foorprint. There is one
+These maps are designed for a small memory footprint. There is one
 structure and one heap allocation which is divided between an array
 of _tuples_ composed of _(Key, Value)_ pairs and a tombstone bitmap.
 _Key_ is hashed to index into the open addressing array, and
