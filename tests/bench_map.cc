@@ -59,7 +59,7 @@ std::vector<std::pair<K,V>> get_random(size_t count)
 {
     rng r;
     std::vector<std::pair<K,V>> data;
-    zedland::hash_map<K,char> set;
+    ethical::hash_map<K,char> set;
     for (size_t i = 0; i < count; i++) {
         K key = r.get<K>();
         while (set[key] == 1) key = r.get<K>();
@@ -172,10 +172,10 @@ int main(int argc, char **argv)
 #endif
 
     heading();
-    bench_spread<zedland::hash_map<size_t,size_t>>("zedland::hash_map::operator[]",count);
-    bench_spread<zedland::linked_hash_map<size_t,size_t>>("zedland::linked_hash_map::operator[]",count);
+    bench_spread<ethical::hash_map<size_t,size_t>>("ethical::hash_map::operator[]",count);
+    bench_spread<ethical::linked_hash_map<size_t,size_t>>("ethical::linked_hash_map::operator[]",count);
 
     heading();
-    bench_map<zedland::hash_map<size_t,size_t>>("zedland::hash_map", count);
-    bench_map<zedland::linked_hash_map<size_t,size_t>>("zedland::linked_hash_map", count);
+    bench_map<ethical::hash_map<size_t,size_t>>("ethical::hash_map", count);
+    bench_map<ethical::linked_hash_map<size_t,size_t>>("ethical::linked_hash_map", count);
 }

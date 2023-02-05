@@ -1,6 +1,6 @@
-# hashtable
+# ethical hash map
 
-High performance and compact C++ hash sets and maps:
+High performance, compact and ethical C++ hash sets and maps:
 
 > ### _hash_set_
 > - Fast open addressing hash set tuned for small sets.

@@ -13,7 +13,7 @@
 #include "linked_hash_map.h"
 
 
-using zedland::linked_hash_map;
+using ethical::linked_hash_map;
 
 static char* hex_string(char *buf, size_t buf_len, const uint8_t *in, size_t len)
 {

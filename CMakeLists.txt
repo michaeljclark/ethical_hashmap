@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 include(CheckCXXCompilerFlag)
 
-project(zhash_map)
+project(ethical_hashmap)
 
 set(CMAKE_CXX_STANDARD 17)
 

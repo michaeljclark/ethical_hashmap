@@ -14,7 +14,7 @@
 
 struct hash_linked_hash_map
 {
-    typedef zedland::linked_hash_map<int,int> hashmap_t;
+    typedef ethical::linked_hash_map<int,int> hashmap_t;
 
     size_t operator()(hashmap_t &m)
     {
@@ -34,7 +34,7 @@ void test_linked_hash_set_simple()
 {
     static const uintptr_t numbers[] = { 8, 9, 6, 7, 4, 5, 2, 3, 0 };
 
-    zedland::linked_hash_set<uintptr_t> ht;
+    ethical::linked_hash_set<uintptr_t> ht;
 
     for (const uintptr_t *n = numbers; *n != 0; n++) {
         ht.insert(*n);
@@ -48,18 +48,18 @@ void test_linked_hash_set_simple()
     }
 }
 
-zedland::linked_hash_map<int,int>
+ethical::linked_hash_map<int,int>
 make_map(std::initializer_list<std::pair<int,int>> l)
 {
-    zedland::linked_hash_map<int,int> m;
+    ethical::linked_hash_map<int,int> m;
     for (auto i = l.begin(); i != l.end(); i++) {
         m.insert(i->first, i->second);
     }
     return std::move(m);
 }
 
-typedef zedland::linked_hash_map<int,int> hashmap_t;
-typedef zedland::linked_hash_set<hashmap_t,int32_t,hash_linked_hash_map> hashset_t;
+typedef ethical::linked_hash_map<int,int> hashmap_t;
+typedef ethical::linked_hash_set<hashmap_t,int32_t,hash_linked_hash_map> hashset_t;
 
 void test_linked_hash_set_hashmap()
 {

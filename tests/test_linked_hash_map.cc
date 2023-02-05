@@ -21,7 +21,7 @@ static const number_pair_t numbers[] = {
 
 void test_linked_hash_map_simple()
 {
-    zedland::linked_hash_map<uintptr_t,uintptr_t> ht;
+    ethical::linked_hash_map<uintptr_t,uintptr_t> ht;
     for (const number_pair_t *n = numbers; n->first != 0; n++) {
         ht.insert(n->first, n->second);
     }
@@ -39,7 +39,7 @@ void test_linked_hash_map_simple()
 
 void test_linked_hash_map_insert()
 {
-    zedland::linked_hash_map<uintptr_t,uintptr_t> ht;
+    ethical::linked_hash_map<uintptr_t,uintptr_t> ht;
 
     auto i1 = ht.insert({777, 1});
     auto i2 = ht.insert(i1, {888, 2});
@@ -64,7 +64,7 @@ void test_linked_hash_map_copy()
         { 666, 4 }, { 777, 1 }, { 888, 2 }, {999, 3}, {0, 0}
     };
 
-    zedland::linked_hash_map<uintptr_t,uintptr_t> ht = std::move(zedland::linked_hash_map<uintptr_t,uintptr_t>());
+    ethical::linked_hash_map<uintptr_t,uintptr_t> ht = std::move(ethical::linked_hash_map<uintptr_t,uintptr_t>());
     size_t i, count;
 
     ht.insert({666, 4});
@@ -87,7 +87,7 @@ void test_linked_hash_map_move()
         { 666, 4 }, { 777, 1 }, { 888, 2 }, {999, 3}, {0, 0}
     };
 
-    zedland::linked_hash_map<uintptr_t,uintptr_t> hs, ht;
+    ethical::linked_hash_map<uintptr_t,uintptr_t> hs, ht;
     size_t i, count;
 
     ht.insert({666, 4});
@@ -105,7 +105,7 @@ void test_linked_hash_map_move()
     }
     assert(count == 4);
 
-    zedland::linked_hash_map<uintptr_t,uintptr_t> hu(hs);
+    ethical::linked_hash_map<uintptr_t,uintptr_t> hu(hs);
 
     count = 0;
     for (auto ent : hu) {
@@ -118,7 +118,7 @@ void test_linked_hash_map_move()
 
 void test_linked_hash_map_delete()
 {
-    zedland::linked_hash_map<uintptr_t,uintptr_t> ht;
+    ethical::linked_hash_map<uintptr_t,uintptr_t> ht;
     ht.insert(7, 8);
     assert(ht.find(7)->second == 8);
     ht.erase(7);
@@ -141,7 +141,7 @@ void insert_random(size_t limit, F fn)
 
 void test_linked_hash_map_random(size_t limit)
 {
-    zedland::linked_hash_map<uintptr_t,uintptr_t> ht;
+    ethical::linked_hash_map<uintptr_t,uintptr_t> ht;
     std::map<uintptr_t,uintptr_t> hm;
 
     insert_random(limit, [&](size_t key, size_t val) {

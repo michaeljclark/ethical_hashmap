@@ -14,7 +14,7 @@
 
 struct hash_hash_map
 {
-    typedef zedland::hash_map<int,int> hash_map_t;
+    typedef ethical::hash_map<int,int> hash_map_t;
 
     size_t operator()(hash_map_t &m)
     {
@@ -34,7 +34,7 @@ void test_hash_set_simple()
 {
     static const uintptr_t numbers[] = { 8, 9, 6, 7, 4, 5, 2, 3, 0 };
 
-    zedland::hash_set<uintptr_t> ht;
+    ethical::hash_set<uintptr_t> ht;
 
     for (const uintptr_t *n = numbers; *n != 0; n++) {
         ht.insert(*n);
@@ -48,18 +48,18 @@ void test_hash_set_simple()
     }
 }
 
-zedland::hash_map<int,int>
+ethical::hash_map<int,int>
 make_map(std::initializer_list<std::pair<int,int>> l)
 {
-    zedland::hash_map<int,int> m;
+    ethical::hash_map<int,int> m;
     for (auto i = l.begin(); i != l.end(); i++) {
         m.insert(i->first, i->second);
     }
     return std::move(m);
 }
 
-typedef zedland::hash_map<int,int> hash_map_t;
-typedef zedland::hash_set<hash_map_t,hash_hash_map> hash_set_t;
+typedef ethical::hash_map<int,int> hash_map_t;
+typedef ethical::hash_set<hash_map_t,hash_hash_map> hash_set_t;
 
 void test_hash_set_hash_map()
 {

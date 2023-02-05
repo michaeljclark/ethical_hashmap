@@ -27,7 +27,7 @@
 #include <utility>
 #include <functional>
 
-namespace zedland {
+namespace ethical {
 
 /*
  * This open addressing linked_hash_map uses a 2-bit entry per slot
