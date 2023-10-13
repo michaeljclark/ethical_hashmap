@@ -4,7 +4,7 @@ include(CheckCXXCompilerFlag)
 
 project(ethical_hashmap)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 macro(add_compiler_flags)
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ARGN}")
