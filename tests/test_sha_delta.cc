@@ -6,6 +6,7 @@
 
 #include <array>
 #include <utility>
+#include <algorithm>
 #include <initializer_list>
 
 #include "bytes.h"
