@@ -58,6 +58,21 @@ static inline uint64_t le64(uint64_t v)
     return u.b;
 }
 
+#undef htobe16
+#undef htole16
+#undef be16toh
+#undef le16toh
+
+#undef htobe32
+#undef htole32
+#undef be32toh
+#undef le32toh
+
+#undef htobe64
+#undef htole64
+#undef be64toh
+#undef le64toh
+
 #define htobe16(x) be16(x)
 #define htole16(x) le16(x)
 #define be16toh(x) be16(x)
