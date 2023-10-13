@@ -100,8 +100,8 @@ struct linked_hash_set
         used(0), tombs(0), limit(initial_size),
         head(empty_offset), tail(empty_offset)
     {
-        size_t data_size = sizeof(data_type) * initial_size;
-        size_t bitmap_size = initial_size >> 2;
+        size_t data_size = sizeof(data_type) * limit;
+        size_t bitmap_size = bitmap_capacity(limit);
         size_t total_size = data_size + bitmap_size;
 
         assert(is_pow2(initial_size));
@@ -113,12 +113,14 @@ struct linked_hash_set
 
     inline ~linked_hash_set()
     {
-        for (size_t i = 0; i < limit; i++) {
-            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
-                data[i].~data_type();
+        if (data) {
+            for (size_t i = 0; i < limit; i++) {
+                if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                    data[i].~data_type();
+                }
             }
+            free(data);
         }
-        free(data);
     }
 
     /*
@@ -130,7 +132,7 @@ struct linked_hash_set
         head(o.head), tail(o.tail)
     {
         size_t data_size = sizeof(data_type) * limit;
-        size_t bitmap_size = limit >> 2;
+        size_t bitmap_size = bitmap_capacity(limit);
         size_t total_size = data_size + bitmap_size;
 
         data = (data_type*)malloc(total_size);
@@ -164,7 +166,7 @@ struct linked_hash_set
         tail = o.tail;
 
         size_t data_size = sizeof(data_type) * limit;
-        size_t bitmap_size = limit >> 2;
+        size_t bitmap_size = bitmap_capacity(limit);
         size_t total_size = data_size + bitmap_size;
 
         data = (data_type*)malloc(total_size);
@@ -217,6 +219,10 @@ struct linked_hash_set
     enum bitmap_state {
         available = 0, occupied = 1, deleted = 2, recycled = 3
     };
+    static inline size_t bitmap_capacity(size_t limit)
+    {
+        return (((limit + 3) >> 2) + 7) & ~7;
+    }
     static inline size_t bitmap_idx(size_t i) { return i >> 5; }
     static inline size_t bitmap_shift(size_t i) { return ((i << 1) & 63); }
     static inline bitmap_state bitmap_get(uint64_t *bitmap, size_t i)
@@ -238,17 +244,17 @@ struct linked_hash_set
      */
 
     void resize_internal(data_type *old_data, uint64_t *old_bitmap,
-                         size_t old_size, size_t new_size)
+                         size_t old_limit, size_t new_limit)
     {
-        size_t data_size = sizeof(data_type) * new_size;
-        size_t bitmap_size = new_size >> 2;
+        size_t data_size = sizeof(data_type) * new_limit;
+        size_t bitmap_size = bitmap_capacity(new_limit);
         size_t total_size = data_size + bitmap_size;
 
-        assert(is_pow2(new_size));
+        assert(is_pow2(new_limit));
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        limit = new_size;
+        limit = new_limit;
         memset(bitmap, 0, bitmap_size);
 
         offset_type k = empty_offset;
@@ -274,6 +280,11 @@ struct linked_hash_set
         }
 
         tombs = 0;
+        for (size_t i = 0; i < old_limit; i++) {
+            if ((bitmap_get(old_bitmap, i) & occupied) == occupied) {
+                old_data[i].~data_type();
+            }
+        }
         free(old_data);
     }
 
@@ -324,7 +335,7 @@ struct linked_hash_set
                 data[i].~data_type();
             }
         }
-        size_t bitmap_size = limit >> 2;
+        size_t bitmap_size = bitmap_capacity(limit);
         memset(bitmap, 0, bitmap_size);
         head = tail = empty_offset;
         used = tombs = 0;

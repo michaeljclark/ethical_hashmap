@@ -98,7 +98,7 @@ struct hash_map
         used(0), tombs(0), limit(initial_size)
     {
         size_t data_size = sizeof(data_type) * limit;
-        size_t bitmap_size = limit >> 2;
+        size_t bitmap_size = bitmap_capacity(limit);
         size_t total_size = data_size + bitmap_size;
 
         assert(is_pow2(limit));
@@ -110,12 +110,14 @@ struct hash_map
 
     inline ~hash_map()
     {
-        for (size_t i = 0; i < limit; i++) {
-            if ((bitmap_get(bitmap, i) & occupied) == occupied) {
-                data[i].~data_type();
+        if (data) {
+            for (size_t i = 0; i < limit; i++) {
+                if ((bitmap_get(bitmap, i) & occupied) == occupied) {
+                    data[i].~data_type();
+                }
             }
+            free(data);
         }
-        free(data);
     }
 
     /*
@@ -126,7 +128,7 @@ struct hash_map
         used(o.used), tombs(o.tombs), limit(o.limit)
     {
         size_t data_size = sizeof(data_type) * limit;
-        size_t bitmap_size = limit >> 2;
+        size_t bitmap_size = bitmap_capacity(limit);
         size_t total_size = data_size + bitmap_size;
 
         data = (data_type*)malloc(total_size);
@@ -157,7 +159,7 @@ struct hash_map
         limit = o.limit;
 
         size_t data_size = sizeof(data_type) * limit;
-        size_t bitmap_size = limit >> 2;
+        size_t bitmap_size = bitmap_capacity(limit);
         size_t total_size = data_size + bitmap_size;
 
         data = (data_type*)malloc(total_size);
@@ -208,6 +210,10 @@ struct hash_map
     enum bitmap_state {
         available = 0, occupied = 1, deleted = 2, recycled = 3
     };
+    static inline size_t bitmap_capacity(size_t limit)
+    {
+        return (((limit + 3) >> 2) + 7) & ~7;
+    }
     static inline size_t bitmap_idx(size_t i) { return i >> 5; }
     static inline size_t bitmap_shift(size_t i) { return ((i << 1) & 63); }
     static inline bitmap_state bitmap_get(uint64_t *bitmap, size_t i)
@@ -229,25 +235,26 @@ struct hash_map
      */
 
     void resize_internal(data_type *old_data, uint64_t *old_bitmap,
-                         size_t old_size, size_t new_size)
+                         size_t old_limit, size_t new_limit)
     {
-        size_t data_size = sizeof(data_type) * new_size;
-        size_t bitmap_size = new_size >> 2;
+        size_t data_size = sizeof(data_type) * new_limit;
+        size_t bitmap_size = bitmap_capacity(new_limit);
         size_t total_size = data_size + bitmap_size;
 
-        assert(is_pow2(new_size));
+        assert(is_pow2(new_limit));
 
         data = (data_type*)malloc(total_size);
         bitmap = (uint64_t*)((char*)data + data_size);
-        limit = new_size;
+        limit = new_limit;
         memset(bitmap, 0, bitmap_size);
 
         size_t i = 0;
-        for (data_type *v = old_data; v != old_data + old_size; v++, i++) {
+        for (data_type *v = old_data; v != old_data + old_limit; v++, i++) {
             if ((bitmap_get(old_bitmap, i) & occupied) != occupied) continue;
             for (size_t j = key_index(v->first); ; j = (j+1) & index_mask()) {
                 if ((bitmap_get(bitmap, j) & occupied) != occupied) {
                     bitmap_set(bitmap, j, occupied);
+                    new (&data[j]) data_type();
                     data[j] = /* copy */ *v;
                     break;
                 }
@@ -255,6 +262,11 @@ struct hash_map
         }
 
         tombs = 0;
+        for (size_t i = 0; i < old_limit; i++) {
+            if ((bitmap_get(old_bitmap, i) & occupied) == occupied) {
+                old_data[i].~data_type();
+            }
+        }
         free(old_data);
     }
 
@@ -265,7 +277,7 @@ struct hash_map
                 data[i].~data_type();
             }
         }
-        size_t bitmap_size = limit >> 2;
+        size_t bitmap_size = bitmap_capacity(limit);
         memset(bitmap, 0, bitmap_size);
         used = tombs = 0;
     }
@@ -279,6 +291,7 @@ struct hash_map
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
+                new (&data[i]) data_type();
                 data[i] = /* copy */ data_type{v.first, v.second};
                 used++;
                 if ((state & deleted) == deleted) tombs--;
@@ -308,6 +321,7 @@ struct hash_map
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
+                new (&data[i]) data_type();
                 data[i].first = /* copy */ key;
                 used++;
                 if ((state & deleted) == deleted) tombs--;
