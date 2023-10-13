@@ -119,7 +119,7 @@ void test_hash_map_noloop()
     ethical::hash_map<int, int> h(4);
 
     // Fill the table with tombstones.
-    for (size_t i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++) {
         h[i];
         h.erase(i);
     }

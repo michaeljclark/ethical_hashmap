@@ -65,7 +65,7 @@ void test_linked_hash_map_copy()
     };
 
     ethical::linked_hash_map<uintptr_t,uintptr_t> ht = std::move(ethical::linked_hash_map<uintptr_t,uintptr_t>());
-    size_t i, count;
+    size_t count;
 
     ht.insert({666, 4});
     ht.insert({777, 1});
@@ -88,7 +88,7 @@ void test_linked_hash_map_move()
     };
 
     ethical::linked_hash_map<uintptr_t,uintptr_t> hs, ht;
-    size_t i, count;
+    size_t count;
 
     ht.insert({666, 4});
     ht.insert({777, 1});

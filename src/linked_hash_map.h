@@ -266,18 +266,18 @@ struct linked_hash_map
             for (size_t j = key_index(v->first); ; j = (j+1) & index_mask()) {
                 if ((bitmap_get(bitmap, j) & occupied) != occupied) {
                     bitmap_set(bitmap, j, occupied);
-                    if (i == head) head = j;
-                    if (i == tail) tail = j;
+                    if (i == head) head = (offset_type)j;
+                    if (i == tail) tail = (offset_type)j;
                     data[j].first = /* copy */ v->first;
                     data[j].second = /* copy */ v->second;
                     data[j].next = empty_offset;
                     if (k == empty_offset) {
                         data[j].prev = empty_offset;
                     } else {
-                        data[j].prev = k;
-                        data[k].next = j;
+                        data[j].prev = (offset_type)k;
+                        data[k].next = (offset_type)j;
                     }
-                    k = j;
+                    k = (offset_type)j;
                     break;
                 }
             }
@@ -293,7 +293,7 @@ struct linked_hash_map
     }
 
     /* inserts indice link before specified position */
-    void insert_link_internal(size_t pos, size_t i)
+    void insert_link_internal(offset_type pos, offset_type i)
     {
         if (head == tail && head == empty_offset) {
             head = tail = i;
@@ -315,7 +315,7 @@ struct linked_hash_map
     }
 
     /* remove indice link at the specified index */
-    void erase_link_internal(size_t i)
+    void erase_link_internal(offset_type i)
     {
         assert(head != empty_offset && tail != empty_offset);
         if (head == tail && i == head) {
@@ -355,7 +355,7 @@ struct linked_hash_map
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
                 data[i] = /* copy */ data_type{v.first, v.second};
-                insert_link_internal(h.i, i);
+                insert_link_internal((offset_type)h.i, (offset_type)i);
                 used++;
                 if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
@@ -385,7 +385,7 @@ struct linked_hash_map
             if ((state & occupied) != occupied) {
                 bitmap_set(bitmap, i, occupied);
                 data[i].first = key;
-                insert_link_internal(empty_offset, i);
+                insert_link_internal(empty_offset, (offset_type)i);
                 used++;
                 if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
@@ -427,7 +427,7 @@ struct linked_hash_map
                 bitmap_set(bitmap, i, deleted);
                 data[i].~data_type();
                 bitmap_clear(bitmap, i, occupied);
-                erase_link_internal(i);
+                erase_link_internal((offset_type)i);
                 used--;
                 tombs++;
                 return;
