@@ -283,7 +283,7 @@ struct hash_set
     {
         for (size_t i = key_index(v); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
-            if ((state & occupied) != occupied) {
+            if ((state & recycled) == available) {
                 bitmap_set(bitmap, i, occupied);
                 new (&data[i]) data_type();
                 data[i].first = /* copy */ v;

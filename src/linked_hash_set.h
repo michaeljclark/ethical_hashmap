@@ -347,7 +347,7 @@ struct linked_hash_set
     {
         for (size_t i = key_index(v); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
-            if ((state & occupied) != occupied) {
+            if ((state & recycled) == available) {
                 bitmap_set(bitmap, i, occupied);
                 data[i].first = /* copy */ v;
                 insert_link_internal((offset_type)h.i, (offset_type)i);

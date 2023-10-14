@@ -352,7 +352,7 @@ struct linked_hash_map
     {
         for (size_t i = key_index(v.first); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
-            if ((state & occupied) != occupied) {
+            if ((state & recycled) == available) {
                 bitmap_set(bitmap, i, occupied);
                 data[i] = /* copy */ data_type{v.first, v.second};
                 insert_link_internal((offset_type)h.i, (offset_type)i);
@@ -382,7 +382,7 @@ struct linked_hash_map
     {
         for (size_t i = key_index(key); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
-            if ((state & occupied) != occupied) {
+            if ((state & recycled) == available) {
                 bitmap_set(bitmap, i, occupied);
                 data[i].first = key;
                 insert_link_internal(empty_offset, (offset_type)i);

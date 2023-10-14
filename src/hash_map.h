@@ -289,7 +289,7 @@ struct hash_map
     {
         for (size_t i = key_index(v.first); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
-            if ((state & occupied) != occupied) {
+            if ((state & recycled) == available) {
                 bitmap_set(bitmap, i, occupied);
                 new (&data[i]) data_type();
                 data[i] = /* copy */ data_type{v.first, v.second};
@@ -319,7 +319,7 @@ struct hash_map
     {
         for (size_t i = key_index(key); ; i = (i+1) & index_mask()) {
             bitmap_state state = bitmap_get(bitmap, i);
-            if ((state & occupied) != occupied) {
+            if ((state & recycled) == available) {
                 bitmap_set(bitmap, i, occupied);
                 new (&data[i]) data_type();
                 data[i].first = /* copy */ key;
