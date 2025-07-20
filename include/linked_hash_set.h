@@ -141,7 +141,7 @@ struct linked_hash_set
         memcpy(bitmap, o.bitmap, bitmap_size);
         for (size_t i = 0; i < limit; i++) {
             if ((bitmap_get(bitmap, i) & occupied) == occupied) {
-                data[i] = /* copy */ o.data[i];
+                ::new (&data[i]) /* copy */ data_type(o.data[i]);
             }
         }
     }
@@ -175,7 +175,7 @@ struct linked_hash_set
         memcpy(bitmap, o.bitmap, bitmap_size);
         for (size_t i = 0; i < limit; i++) {
             if ((bitmap_get(bitmap, i) & occupied) == occupied) {
-                data[i] = /* copy */ o.data[i];
+                ::new (&data[i]) /* copy */ data_type(o.data[i]);
             }
         }
 
@@ -265,7 +265,7 @@ struct linked_hash_set
                     bitmap_set(bitmap, j, occupied);
                     if (i == head) head = (offset_type)j;
                     if (i == tail) tail = (offset_type)j;
-                    data[j].first = /* copy */ v->first;
+                    ::new (&data[j].first) /* copy */ value_type(v->first);
                     data[j].next = empty_offset;
                     if (k == empty_offset) {
                         data[j].prev = empty_offset;
@@ -349,7 +349,7 @@ struct linked_hash_set
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & recycled) == available) {
                 bitmap_set(bitmap, i, occupied);
-                data[i].first = /* copy */ v;
+                ::new (&data[i].first) /* copy */ value_type(v);
                 insert_link_internal((offset_type)h.i, (offset_type)i);
                 used++;
                 if ((state & deleted) == deleted) tombs--;

@@ -134,7 +134,7 @@ struct hash_set
         memcpy(bitmap, o.bitmap, bitmap_size);
         for (size_t i = 0; i < limit; i++) {
             if ((bitmap_get(bitmap, i) & occupied) == occupied) {
-                data[i] = /* copy */ o.data[i];
+                ::new (&data[i]) /* copy */ data_type(o.data[i]);
             }
         }
     }
@@ -165,7 +165,7 @@ struct hash_set
         memcpy(bitmap, o.bitmap, bitmap_size);
         for (size_t i = 0; i < limit; i++) {
             if ((bitmap_get(bitmap, i) & occupied) == occupied) {
-                data[i] = /* copy */ o.data[i];
+                ::new (&data[i]) /* copy */ data_type(o.data[i]);
             }
         }
 
@@ -251,8 +251,7 @@ struct hash_set
             for (size_t j = key_index(v->first); ; j = (j+1) & index_mask()) {
                 if ((bitmap_get(bitmap, j) & occupied) != occupied) {
                     bitmap_set(bitmap, j, occupied);
-                    new (&data[j]) data_type();
-                    data[j] = /* copy */ *v;
+                    ::new (&data[i]) /* copy */ data_type(*v);
                     break;
                 }
             }
@@ -285,8 +284,7 @@ struct hash_set
             bitmap_state state = bitmap_get(bitmap, i);
             if ((state & recycled) == available) {
                 bitmap_set(bitmap, i, occupied);
-                new (&data[i]) data_type();
-                data[i].first = /* copy */ v;
+                ::new (&data[i].first) /* copy */ value_type(v);
                 used++;
                 if ((state & deleted) == deleted) tombs--;
                 if (load() > load_factor) {
