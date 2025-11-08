@@ -30,6 +30,9 @@ hint in the first argument of _insert_ to set the position of a new
 value inserted into the linked list, while _find_ uses the hashed key
 index to locate _key value pairs_ in the hash table.
 
+a simplified C11 hash map and linked hash map implementation exists
+in [chashmap](https://github.com/michaeljclark/chashmap).
+
 ## Design 
 
 These maps are designed for a small memory footprint. There is one
